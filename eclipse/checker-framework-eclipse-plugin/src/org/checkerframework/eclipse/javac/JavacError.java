@@ -214,7 +214,7 @@ public class JavacError {
 	private static boolean handleErrors(String line) {
 		StatusManager manager = StatusManager.getManager();
 
-		// special case for missing checkers.jar (or processor class)
+		// special case for missing checker-framework.jar (or processor class)
 		Matcher procMatcher = noProcessorPattern.matcher(line);
 		if (procMatcher.matches()) {
 			CheckerErrorStatus status;
@@ -226,7 +226,7 @@ public class JavacError {
 				status = new CheckerErrorStatus(
 						"Annotation processor "
 								+ procMatcher.group(1)
-								+ " could not be found. Try adding checkers.jar to your project build path.");
+								+ " could not be found. Try adding checker-framework.jar to your project build path.");
 			}
 			manager.handle(status, StatusManager.SHOW);
 			return false;

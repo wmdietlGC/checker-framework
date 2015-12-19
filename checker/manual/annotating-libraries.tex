@@ -31,7 +31,7 @@
 % annotated JDKs at the paths \<checker/dist/jdk7.jar> and
 % \<checker/dist/jdk8.jar>.
 % The \<javac> that is distributed with the Checker Framework and the command
-% \code{java -jar \$CHECKERFRAMEWORK/checker/dist/checker.jar} both use the appropriate \<jdk7.jar> or \<jdk8.jar>
+% \code{java -jar \$CHECKERFRAMEWORK/checker/dist/checker-framework.jar} both use the appropriate \<jdk7.jar> or \<jdk8.jar>
 % based on the version of Java used to run them.
 %
 % The annotated JDKs should \emph{not} be in your classpath at run time, only
@@ -234,7 +234,7 @@ partially-annotated library.
   The reason to run every type-checker is to verify
   the annotations you wrote, and to use appropriate defaults for all
   unnanotated type uses.
-  The reason to include the contents of \<checker-qual.jar> is so that 
+  The reason to include the contents of \<checker-qual.jar> is so that
   the resulting \<.jar> file can be used whether or not the Checker Framework
   is being run.
 
@@ -480,7 +480,7 @@ and then annotate it.  The rest of this section describes this approach.
 \begin{enumerate}
 
 \item
-  Create a stub file by running the stub class generator.  (\<checker.jar> and \<javac.jar>
+  Create a stub file by running the stub class generator.  (\<checker-framework.jar> and \<javac.jar>
   must be on your classpath.)
 
 \begin{Verbatim}
@@ -652,8 +652,8 @@ in the library's \<.class> files instead.
 % \item
 %   Build the skeleton class generator tool by running \code{ant
 %     skeleton-util dist} in the \code{checker} directory.  This updates the
-%   \code{checker.jar} file to contain the skeleton class generator.
-%   \code{checker.jar} should already be on your classpath (see
+%   \code{checker-framework.jar} file to contain the skeleton class generator.
+%   \code{checker-framework.jar} should already be on your classpath (see
 %   Section~\ref{installation}).
 %
 % \end{enumerate}

@@ -45,7 +45,7 @@ public class Main {
                 null,
                 Arrays.asList(
                         "-classpath",
-                        "../../dist/javac.jar:../../dist/checker.jar",
+                        "../../dist/javac.jar:../../dist/checker-framework.jar",
                         "-proc:only",
                         "-AprintErrorStack",
                         "-AprintAllQualifiers"

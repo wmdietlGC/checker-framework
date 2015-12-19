@@ -36,7 +36,7 @@ import com.sun.tools.javac.file.JavacFileManager;
  */
 public class JavacRunner implements CheckersRunner
 {
-    public static final String CHECKERS_JAR_LOCATION = "lib/checkers.jar";
+    public static final String CHECKER_FRAMEWORK_JAR_LOCATION = "lib/checker-framework.jar";
     public static final String JAVAC_LOCATION = "lib/javac.jar";
     public static final String JDK_LOCATION = "lib/jdk.jar";
     public static final List<String> IMPLICIT_ARGS = Arrays.asList(

@@ -5,7 +5,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="lib" path="lib/jdk7.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jdk8.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/checker.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/checker-framework.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/javac.jar"/>
 	<classpathentry exported="true" kind="lib" path="bin" sourcepath="bin"/>
 	<classpathentry kind="output" path="bin"/>

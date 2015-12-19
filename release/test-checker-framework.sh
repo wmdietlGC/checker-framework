@@ -24,14 +24,14 @@ function cfruntest() {
   $CHECKERFRAMEWORK/checker/bin/javac -version
   if (($?)); then exit 6; fi
 
-  java -jar $CHECKERFRAMEWORK/checker/dist/checker.jar -version
+  java -jar $CHECKERFRAMEWORK/checker/dist/checker-framework.jar -version
   if (($?)); then exit 6; fi
 
   $CHECKERFRAMEWORK/checker/bin/javac -processor org.checkerframework.checker.nullness.NullnessChecker \
       $CHECKERFRAMEWORK/checker/examples/NullnessReleaseTests.java
   if (($?)); then exit 6; fi
 
-  java -jar $CHECKERFRAMEWORK/checker/dist/checker.jar \
+  java -jar $CHECKERFRAMEWORK/checker/dist/checker-framework.jar \
       -processor org.checkerframework.checker.nullness.NullnessChecker \
       $CHECKERFRAMEWORK/checker/examples/NullnessReleaseTests.java
   if (($?)); then exit 6; fi

@@ -387,9 +387,9 @@
         </jar>
     </target>
 
-    <!-- This creates checker.jar -->
+    <!-- This creates checker-framework.jar -->
     <target name="jar" depends="build,checker-qual-jar,checker-compat-qual-jar"
-            description="Create checker.jar file">
+            description="Create checker-framework.jar file">
 
         <!-- Only unjar the stubparser - everything else is recompiled. -->
         <unjar src="${stubparser.lib}" dest="${build}" />
@@ -501,7 +501,7 @@
             <formatter type="xml"/>
 	-->
 	<!-- end of non-debugging version. -->
-	
+
 	<!-- debugging version: -->
         <junit fork="${run.tests.should.fork}"
                dir="${basedir}"
@@ -1212,7 +1212,7 @@
       <ant dir="${basedir}/../../checker-framework-demos">
       </ant>
     </target>
-      
+
 
     <!-- TODO: like for -run-checker this only checks checker/src.
          Improve both. -->
@@ -1318,17 +1318,17 @@
 
     <target name="dist-all"
             depends="-prep-dist,jar,all.jdks.jar,dist-nobuildjdk"
-            description="Build checker.jar, checker-qual.jar, and all jdkX.jar(s).  This comprises all jars needed to run the framework.">
+            description="Build checker-framework.jar, checker-qual.jar, and all jdkX.jar(s).  This comprises all jars needed to run the framework.">
     </target>
 
     <target name="dist"
 	    depends="-prep-dist,jar,jdk.jar,dist-nobuildjdk"
-            description="Build checker.jar, checker-qual.jar, and one jdkX.jar where X is the major version number of java in JAVA_HOME (only Java 7/8/9 are currently supported).  This comprises all jars needed to run the framework.">
+            description="Build checker-framework.jar, checker-qual.jar, and one jdkX.jar where X is the major version number of java in JAVA_HOME (only Java 7/8/9 are currently supported).  This comprises all jars needed to run the framework.">
     </target>
 
     <target name="dist-nobuildjdk"
 	    depends="-prep-dist,jar,jdk.jar.exists"
-            description="Build checker.jar, checker-qual.jar WITHOUT updating jdkX.jar.  Move all relevant files to the binary directory.">
+            description="Build checker-framework.jar, checker-qual.jar WITHOUT updating jdkX.jar.  Move all relevant files to the binary directory.">
 
         <mkdir dir="dist" />
 

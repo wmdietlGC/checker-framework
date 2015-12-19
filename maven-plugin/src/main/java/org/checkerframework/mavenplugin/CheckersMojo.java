@@ -191,7 +191,7 @@ public class CheckersMojo extends AbstractMojo {
     /**
      * The location of the Checker Framework jar
      */
-    private File checkerJar;
+    private File checkerFrameworkJar;
 
 
     /**
@@ -251,7 +251,7 @@ public class CheckersMojo extends AbstractMojo {
 
         //TODO: SEEMS THAT WHEN WE ARE USING @ ARGS THE CLASSPATH FROM THE JAR IS OVERRIDDEN - FIX THIS
         final String classpath =
-                checkerJar.getAbsolutePath() + File.pathSeparator
+                checkerFrameworkJar.getAbsolutePath() + File.pathSeparator
                 + StringUtils.join(classpathElements.iterator(), File.pathSeparator);
 
         File srcFofn = null;
@@ -280,7 +280,7 @@ public class CheckersMojo extends AbstractMojo {
 
         final List<String> arguments = PluginUtil.getCmdArgsOnly(
                 javacJar, jdkJar,
-                srcFofn, processor, checkerJar.getAbsolutePath(),
+                srcFofn, processor, checkerFrameworkJar.getAbsolutePath(),
                 null, cpFofn, null, props, null,
                 procOnly, outputDirectory);
 
@@ -328,7 +328,7 @@ public class CheckersMojo extends AbstractMojo {
      * @throws MojoExecutionException
      */
     private final void locateArtifacts() throws MojoExecutionException {
-        checkerJar = PathUtils.getFrameworkJar("checker", checkerFrameworkVersion,
+        checkerFrameworkJar = PathUtils.getFrameworkJar("checker", checkerFrameworkVersion,
                 artifactFactory, artifactResolver, remoteArtifactRepositories, localRepository);
 
         javacJar    = PathUtils.getFrameworkJar("compiler", checkerFrameworkVersion,

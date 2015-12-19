@@ -25,4 +25,4 @@ for i in "$@" ; do
    IFS="$saveIFS"
 done
 
-eval "java" "-jar" "${mydir}"/../dist/checker.jar ${args}
+eval "java" "-jar" "${mydir}"/../dist/checker-framework.jar ${args}

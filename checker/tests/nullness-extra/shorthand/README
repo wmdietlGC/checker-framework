@@ -3,9 +3,9 @@ See: http://types.cs.washington.edu/checker-framework/current/checker-framework-
 This test is not Nullness specific.
 
 We have placed this test in this location because it has two preconditions:
-1) It must be run after checker.jar is created
+1) It must be run after checker-framework.jar is created
 2) It must be run via CheckerMain and not via bootclasspath manipulation in the build file
-The normal testing methods do not require a fully built checker.jar and we did not want to force this
+The normal testing methods do not require a fully built checker-framework.jar and we did not want to force this
 requirement on them.  Furthermore, the JUnit tests do not run through CheckerMain.  This cannot be placed in
 the jtreg test suite because it does not run through CheckerMain.
 

@@ -20,7 +20,7 @@ import java.util.zip.ZipEntry;
 /**
  * This class functions essentially the same as the jsr308-langtools javac
  * script EXCEPT that it adds the appropriate jdk.jar to the bootclasspath and
- * adds checker.jar to the classpath passed to javac.
+ * adds checker-framework.jar to the classpath passed to javac.
  */
 public class CheckerMain {
 
@@ -49,9 +49,9 @@ public class CheckerMain {
     protected final File javacJar;
 
     /**
-     * The paths to the jar containing CheckerMain.class (i.e. checker.jar)
+     * The paths to the jar containing CheckerMain.class (i.e. checker-framework.jar)
      */
-    protected final File checkersJar;
+    protected final File checkerFrameworkJar;
 
 
     private final List<String> compilationBootclasspath;
@@ -70,10 +70,10 @@ public class CheckerMain {
      * Construct all the relevant file locations and java version given the path to this jar and
      * a set of directories in which to search for jars
      */
-    public CheckerMain(final File checkersJar, final String [] args) {
+    public CheckerMain(final File checkerFrameworkJar, final String [] args) {
 
-        final File searchPath = checkersJar.getParentFile();
-        this.checkersJar   = checkersJar;
+        final File searchPath = checkerFrameworkJar.getParentFile();
+        this.checkerFrameworkJar   = checkerFrameworkJar;
 
         final List<String> argsList = new ArrayList<String>(Arrays.asList(args));
         replaceShorthandProcessor(argsList);
@@ -95,7 +95,7 @@ public class CheckerMain {
     }
 
     protected void assertValidState() {
-        assertFilesExist(Arrays.asList(javacJar, jdkJar, checkersJar));
+        assertFilesExist(Arrays.asList(javacJar, jdkJar, checkerFrameworkJar));
     }
 
     /**
@@ -137,7 +137,7 @@ public class CheckerMain {
 
     protected List<String> createCpOpts(final List<String> argsList) {
         final List<String> extractedOps = extractCpOpts(argsList);
-        extractedOps.add(0, this.checkersJar.getAbsolutePath());
+        extractedOps.add(0, this.checkerFrameworkJar.getAbsolutePath());
         return extractedOps;
     }
 
@@ -531,7 +531,7 @@ public class CheckerMain {
      * Framework Checkers, except for SubtypingChecker are excluded from processor shorthand
      */
     protected static final String CHECKER_BASE_PACKAGE = "org.checkerframework.checker";
-    // Forward slash is used instead of File.separator because checker.jar uses / as the separator.
+    // Forward slash is used instead of File.separator because checker-framework.jar uses / as the separator.
     protected static final String CHECKER_BASE_DIR_NAME = CHECKER_BASE_PACKAGE.replace(".", "/");
 
     protected static final String FULLY_QUALIFIED_SUBTYPING_CHECKER =
@@ -550,25 +550,25 @@ public class CheckerMain {
         return fullyQualifiedCheckerNames.contains(asCheckerFrameworkProcessors(processorString, fullyQualifiedCheckerNames, true));
     }
 
-    // Returns the list of fully qualified names of the checkers found in checker.jar
+    // Returns the list of fully qualified names of the checkers found in checker-framework.jar
     // This covers only checkers with the name ending in "Checker"
     // Checkers with a name ending in "Subchecker" are not included in the returned list,
     // Note however that it is possible for a checker with the name ending in "Checker" to be used as a subchecker.
     private List<String> getCheckerClassNames() {
         ArrayList<String> checkerClassNames = new ArrayList<String>();
         try {
-            final JarInputStream checkerJarIs = new JarInputStream(new FileInputStream(checkersJar));
+            final JarInputStream checkerFrameworkJarIs = new JarInputStream(new FileInputStream(checkerFrameworkJar));
             ZipEntry entry;
-            while ((entry = checkerJarIs.getNextEntry()) != null) {
+            while ((entry = checkerFrameworkJarIs.getNextEntry()) != null) {
                 final String name = entry.getName();
                 if (name.startsWith(CHECKER_BASE_DIR_NAME) && name.endsWith("Checker.class")) { // Checkers ending in "Subchecker" are not included in this list used by CheckerMain.
-                    // Forward slash is used instead of File.separator because checker.jar uses / as the separator.
+                    // Forward slash is used instead of File.separator because checker-framework.jar uses / as the separator.
                     checkerClassNames.add(PluginUtil.join(".", name.substring(0, name.length() - ".class".length()).split("/")));
                 }
             }
-            checkerJarIs.close();
+            checkerFrameworkJarIs.close();
         } catch (IOException e) {
-            throw new RuntimeException("Could not read checker.jar", e);
+            throw new RuntimeException("Could not read checker-framework.jar", e);
         }
 
         return checkerClassNames;
@@ -589,7 +589,7 @@ public class CheckerMain {
      * org.checkerframework.checker.nullness.NullnessChecker,org.checkerframework.checker.regex.RegexChecker
      *
      * Note, a processor entry only gets replaced if it contains NO "." (i.e. is not qualified by the
-     * package name) and can be found under the package org.checkerframework.checker in the checker.jar.
+     * package name) and can be found under the package org.checkerframework.checker in the checker-framework.jar.
      * @param processorsString A string identifying processors
      * @param fullyQualifiedCheckerNames A list of fully-qualified checker names to match processorsString against.
      * @param allowSubcheckers Whether to match against fully qualified checker names ending with "Subchecker".

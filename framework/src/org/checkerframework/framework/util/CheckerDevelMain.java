@@ -35,14 +35,14 @@ public class CheckerDevelMain extends CheckerMain {
 
         assert (binDir != null) :
                 BINARY_PROP + " must specify a binary directory in which " +
-                "checker.jar, javac.jar, etc... are usually built";
+                "checker-framework.jar, javac.jar, etc... are usually built";
 
         assert (cp         != null) : CP_PROP  + " must specify a path entry to prepend to the CLASSPATH";
         assert (runtimeBcp != null) : RUNTIME_BCP_PROP + " must specify a path entry to prepend to the Java bootclasspath when running Javac";  //TODO: Fix the assert messages
         assert (compileBcp != null) : COMPILE_BCP_PROP + " must specify a path entry to prepend to the compiler bootclasspath";
 
-        // The location that checker.jar would be in if we have built it
-        final File checkersLoc = new File(binDir, "checker.jar");
+        // The location that checker-framework.jar would be in if we have built it
+        final File checkersLoc = new File(binDir, "checker-framework.jar");
         final CheckerDevelMain program = new CheckerDevelMain(checkersLoc, args);
         final int exitStatus = program.invokeCompiler();
         System.exit(exitStatus);

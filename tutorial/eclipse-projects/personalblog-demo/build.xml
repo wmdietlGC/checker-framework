@@ -18,7 +18,7 @@
       <compilerarg value="-implicit:class"/>
 
       <classpath>
-        <pathelement location="${checker-framework}/checker/dist/checker.jar"/>
+        <pathelement location="${checker-framework}/checker/dist/checker-framework.jar"/>
         <pathelement location="lib/personalblog.jar"/>
         <pathelement location="lib/hibernate2.jar"/>
         <pathelement location="lib/commons-logging.jar"/>

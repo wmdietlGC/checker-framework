@@ -2,7 +2,7 @@ This directory, "checker/bin", contains scripts to run the Checker Framework.
 
 javac - Is a shell script that runs the Checker Framework in *nix systems
 including Mac OS X.  Its invocation is equivalent to
-"java -jar checker.jar <compiler arguments>".
+"java -jar checker-framework.jar <compiler arguments>".
 This script is a drop-in replacement for the script javac provided by the
 OpenJDK.
 
@@ -17,7 +17,7 @@ Checker Framework.
 checker-qual.jar - Contains the annotations used by the checkers built into the
 Checker Framework
 
-checker.jar - Contains all the Checker Framework classes including the framework
+checker-framework.jar - Contains all the Checker Framework classes including the framework
 itself, all built-in checkers, and the annotations found in checker-qual.jar.
 
 javac.jar - Contains the Type Annotations Compiler

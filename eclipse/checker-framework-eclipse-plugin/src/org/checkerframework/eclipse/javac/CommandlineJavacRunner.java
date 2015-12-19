@@ -29,9 +29,9 @@ import org.checkerframework.eclipse.util.Command;
 public class CommandlineJavacRunner implements CheckersRunner {
 
     /**
-     * The location of the checkers.jar relative to the plugin directory
+     * The location of the checker-framework.jar relative to the plugin directory
      */
-    public static final String CHECKERS_JAR_LOCATION = "lib/checker.jar";
+    public static final String CHECKER_FRAMEWORK_JAR_LOCATION = "lib/checker-framework.jar";
 
     public boolean verbose = false;
 
@@ -61,9 +61,9 @@ public class CommandlineJavacRunner implements CheckersRunner {
     protected String checkResult;
 
     /**
-     * The location of checkers.jar
+     * The location of checker-framework.jar
      */
-    protected File checkerJar;
+    protected File checkerFrameworkJar;
 
     /**
      * Whether or not the checker in question has qualifiers that are not supplied by Aquals
@@ -76,8 +76,8 @@ public class CommandlineJavacRunner implements CheckersRunner {
         this.processors = processors;
 
         //TODO: SEEMS THAT WHEN WE ARE USING @ ARGS THE CLASSPATH FROM THE JAR IS OVERRIDDEN - FIX THIS
-        this.checkerJar = locatePluginFile(CHECKERS_JAR_LOCATION);
-        this.classpath = checkerJar.getAbsolutePath() + File.pathSeparator + classpath;
+        this.checkerFrameworkJar = locatePluginFile(CHECKER_FRAMEWORK_JAR_LOCATION);
+        this.classpath = checkerFrameworkJar.getAbsolutePath() + File.pathSeparator + classpath;
         this.bootClasspath = bootClasspath;
 
         final IPreferenceStore prefs = CheckerPlugin.getDefault().getPreferenceStore();
@@ -134,7 +134,7 @@ public class CommandlineJavacRunner implements CheckersRunner {
     /**
      * Create a list where each item in the list forms a part of the command for calling the Checker Framework compiler
      * e.g.
-     * java -jar checker.jar -proc:only -classpath /this/projects/classpath -processor checkers.nullness.NullChecker @srcFofnPath
+     * java -jar checker-framework.jar -proc:only -classpath /this/projects/classpath -processor checkers.nullness.NullChecker @srcFofnPath
      * @param srcFofn A file of file names that contains the paths of all files to compile
      * @param processors Checkers to call on the given filenames
      * @param classpathFofn A file of file names for the Eclipse project's classpath
@@ -167,7 +167,7 @@ public class CommandlineJavacRunner implements CheckersRunner {
         final String jdkPath = prefs.getString(CheckerPreferences.PREF_CHECKER_JDK_PATH);
 
         return PluginUtil.getCmd(null, null, null, srcFofn, procsStr,
-                checkerJar.getAbsolutePath(),
+                checkerFrameworkJar.getAbsolutePath(),
                 jdkPath, classpathFofn, bootClassPath,
                 props, out, true, null);
     }
@@ -230,24 +230,24 @@ public class CommandlineJavacRunner implements CheckersRunner {
     public static File locatePluginFile(String path) {
         Bundle bundle = Platform.getBundle(CheckerPlugin.PLUGIN_ID);
 
-        Path checkersJAR = new Path(path);
-        URL checkersJarURL;
+        Path checkerFrameworkJAR = new Path(path);
+        URL checkerFrameworkJarURL;
         try {
-            checkersJarURL = FileLocator.toFileURL(FileLocator.find(bundle, checkersJAR, null));
+            checkerFrameworkJarURL = FileLocator.toFileURL(FileLocator.find(bundle, checkerFrameworkJAR, null));
         } catch (IOException e) {
             throw new RuntimeException("Exception locating plugin on path: " + path, e);
         } catch (NullPointerException npe) {
-            throw new RuntimeException("Bundle= " + bundle + " ID=" + CheckerPlugin.PLUGIN_ID + " checkerJar=" + checkersJAR, npe);
+            throw new RuntimeException("Bundle= " + bundle + " ID=" + CheckerPlugin.PLUGIN_ID + " checkerFrameworkJar=" + checkerFrameworkJAR, npe);
         }
 
-        File checkersJarFile;
+        File checkerFrameworkJarFile;
         try {
-            checkersJarFile = new File(checkersJarURL.toURI());
+            checkerFrameworkJarFile = new File(checkerFrameworkJarURL.toURI());
         } catch(URISyntaxException e) {
-            checkersJarFile = new File(checkersJarURL.getPath());
+            checkerFrameworkJarFile = new File(checkerFrameworkJarURL.getPath());
         }
 
-        return checkersJarFile;
+        return checkerFrameworkJarFile;
     }
 
     /**

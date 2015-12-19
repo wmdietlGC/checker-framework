@@ -11,7 +11,7 @@ from the repository http://types.cs.washington.edu/m2-repo .  You may wish
 to load your own version of the artifacts.
  * If you have your own modified version of the Checker Framework (say, it
    adds a new type-checker or fixes a bug), then follow the instructions for
-   "Using a custom artifact, such as checkers.jar".
+   "Using a custom artifact, such as checker-framework.jar".
  * If you have modified the Maven plugin itself, then follow the instructions
    for "Installing the Maven plugin locally".
 
@@ -32,7 +32,7 @@ The artifact names are:
   checkerframework-maven-plugin - the Checker Framework maven plugin itself
   checker-qual - checkers-qual.jar
   compiler - jsr308-langtools compiler's javac.jar
-  framework - checkers.jar
+  framework - checker-framework.jar
   jdk7 - jdk7.jar
 
 The version number is specified by the checkerFrameworkVersion element in your
@@ -42,10 +42,10 @@ http://types.cs.washington.edu/checker-framework/current/checker-framework-manua
 
 
 
-Using a custom artifact, such as checkers.jar
+Using a custom artifact, such as checker-framework.jar
 =============================================
 
-You may wish to test a modified version of checkers.jar or another artifact
+You may wish to test a modified version of checker-framework.jar or another artifact
 with the Checker Framework Maven plugin.  To do so, you will install the
 artifacts with a new version number.  (You do not have to install the Maven
 plugin locally, though.)  Follow these instructions:

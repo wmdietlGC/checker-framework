@@ -86,7 +86,7 @@ def stage_maven_artifacts_in_maven_central( new_checker_version ):
     ant_cmd = "ant -f release.xml -Ddest.dir=%s -Dmaven.plugin.dir=%s jar-maven-extras" % (mvn_dist, MAVEN_PLUGIN_DIR)
     execute(ant_cmd, True, False, CHECKER_FRAMEWORK_RELEASE)
 
-    #At the moment, checker.jar is the only artifact with legitimate accompanying source/javadoc jars
+    #At the moment, checker-framework.jar is the only artifact with legitimate accompanying source/javadoc jars
     mvn_sign_and_deploy_all( SONATYPE_OSS_URL, SONATYPE_STAGING_REPO_ID, CHECKER_BINARY_RELEASE_POM, CHECKER_BINARY,
                              CHECKER_SOURCE, CHECKER_JAVADOC,
                              pgp_user, pgp_passphrase )

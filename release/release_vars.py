@@ -106,7 +106,7 @@ RELEASE_HTACCESS = os.path.join(CHECKER_FRAMEWORK_RELEASE, "types.htaccess")
 RELEASE_DEV_HTACCESS = os.path.join(CHECKER_FRAMEWORK_RELEASE, "types.dev.htaccess")
 CHECKER_TAG_PREFIXES = [ "checker-framework-", "checkers-" , "new release " ]
 
-CHECKER_BINARY   = os.path.join(CHECKER_BIN_DIR, 'checker.jar' )
+CHECKER_BINARY   = os.path.join(CHECKER_BIN_DIR, 'checker-framework.jar' )
 CHECKER_SOURCE   = os.path.join(CHECKER_BIN_DIR, 'checker-source.jar' )
 CHECKER_JAVADOC  = os.path.join(CHECKER_BIN_DIR, 'checker-javadoc.jar' )
 
