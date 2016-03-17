@@ -287,6 +287,11 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
     private final static int DEFAULT_CACHE_SIZE = 300;
 
     /**
+     * Cache of AnnotatedTypeMirrors created by {@link #getAnnotatedType(Tree)}
+     */
+    private final Map<Tree,AnnotatedTypeMirror> treeToAnnotatedTypeMirrorCache;
+
+    /**
      * Constructs a factory from the given {@link ProcessingEnvironment}
      * instance and syntax tree root. (These parameters are required so that
      * the factory may conduct the appropriate annotation-gathering analyses on
@@ -321,7 +326,15 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
 
         this.shouldCache = !checker.hasOption("atfDoNotCache");
         int cacheSize = shouldCache ? getCacheSize() : 0;
-        this.elementToTreeCache = CollectionUtils.createLRUCache(cacheSize);
+
+        // From the HashMap Javadoc:
+        // "The load factor is a measure of how full the hash table is allowed to get before
+        // its capacity is automatically increased"
+        // Since this hash map is used as a fixed size cache, and the inital size is
+        // set to that size, set the load factor to one to avoid rehashes.
+        float loadFactor = 1.0f;
+        int initialCapacity = cacheSize;
+        this.treeToAnnotatedTypeMirrorCache = CollectionUtils.createLRUCache(initialCapacity, cacheSize, loadFactor);
 
         this.typeFormatter = createAnnotatedTypeFormatter();
         this.annotationFormatter = createAnnotationFormatter();
@@ -848,6 +861,9 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             ErrorReporter.errorAbort("AnnotatedTypeFactory.getAnnotatedType: null tree");
             return null; // dead code
         }
+        if(shouldCache && treeToAnnotatedTypeMirrorCache.containsKey(tree)){
+            return treeToAnnotatedTypeMirrorCache.get(tree);
+        }
 
         AnnotatedTypeMirror type;
         if (TreeUtils.isClassTree(tree)) {
@@ -865,6 +881,10 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         }
 
         annotateImplicit(tree, type);
+
+        if (shouldCache) {
+            treeToAnnotatedTypeMirrorCache.put(tree, type);
+        }
 
         if (TreeUtils.isClassTree(tree)) {
             postProcessClassTree((ClassTree) tree);

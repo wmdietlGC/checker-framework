@@ -684,6 +684,9 @@ public abstract class GenericAnnotatedTypeFactory<
      * classes.
      */
     protected void performFlowAnalysis(ClassTree classTree) {
+        boolean oldShouldCache = shouldCache;
+        // turn off caching during data flow
+        shouldCache = false;
         if (flowResult == null) {
             regularExitStores = new IdentityHashMap<>();
             returnStatementStores = new IdentityHashMap<>();
@@ -814,6 +817,8 @@ public abstract class GenericAnnotatedTypeFactory<
 
             scannedClasses.put(ct, ScanState.FINISHED);
         }
+        //reinstate old value of shouldCache
+        shouldCache = oldShouldCache;
     }
 
     // Maintain a deque of analyses to accommodate nested classes.
