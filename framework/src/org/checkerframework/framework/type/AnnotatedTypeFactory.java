@@ -86,9 +86,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
-//The following imports are from com.sun, but they are all
-//@jdk.Exported and therefore somewhat safe to use.
-//Try to avoid using non-@jdk.Exported classes.
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
@@ -112,6 +109,10 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
+
+//The following imports are from com.sun, but they are all
+//@jdk.Exported and therefore somewhat safe to use.
+//Try to avoid using non-@jdk.Exported classes.
 
 /**
  * The methods of this class take an element or AST node, and return the
@@ -284,9 +285,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
 
     /** Size of LRU cache if one isn't specified using the atfCacheSize option. */
     private final static int DEFAULT_CACHE_SIZE = 300;
-
-    /** Mapping from an Element to the source Tree of the declaration. */
-    private final Map<Element, Tree> elementToTreeCache;
 
     /**
      * Constructs a factory from the given {@link ProcessingEnvironment}
@@ -2160,12 +2158,24 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
      * @return the tree declaration of the element if found
      */
     public final Tree declarationFromElement(Element elt) {
+        // There used to be a map from elt to the returned Tree
+        // that cached the Tree.  When this cache was used in conjunction with
+        // Tree to AnnotatedTypeMirror and Element to AnnotatedTypeMirror caches,
+        // no problems with this cache were observed.  However, once the other
+        // caches were removed, this Element to Tree cache caused the following crash:
+        //
+        // When this cache is used to access a Tree outside of the current class tree,
+        // the returned tree does not have type parameters.  This is probably because
+        // javac moved the Tree into the next phase.
+        //
+        // This causes a crash on framework/tests/all-system/NodeEdgeGraph.java
+        //        Exception: java.lang.IndexOutOfBoundsException: Index: 0, Size: 0; Stack trace: com.sun.tools.javac.util.List.get(List.java:476)
+        //        org.checkerframework.framework.type.TypeFromTypeTreeVisitor.forTypeVariable(TypeFromTypeTreeVisitor.java:177)
+
+
         // if root is null, we cannot find any declaration
         if (root == null)
             return null;
-        if (shouldCache && elementToTreeCache.containsKey(elt)) {
-            return elementToTreeCache.get(elt);
-        }
 
         // Check for new declarations, outside of the AST.
         if (elt instanceof DetachedVarSymbol) {
@@ -2193,8 +2203,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
                     (com.sun.tools.javac.tree.JCTree) root);
             break;
         }
-        if (shouldCache)
-            elementToTreeCache.put(elt, fromElt);
         return fromElt;
     }
 
