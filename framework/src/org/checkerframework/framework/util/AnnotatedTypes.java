@@ -48,6 +48,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -1216,9 +1217,11 @@ public class AnnotatedTypes {
 
         if (parameters.size() == args.size()) {
             // Check if one sent an element or an array
-            AnnotatedTypeMirror lastArg = atypeFactory.getAnnotatedType(args.get(args.size() - 1));
+            ExpressionTree lastArgument = args.get(args.size() - 1);
+            TypeMirror lastArg = InternalUtils.typeOf(lastArgument);
+
             if (lastArg.getKind() == TypeKind.ARRAY &&
-                    getArrayDepth(varargs) == getArrayDepth((AnnotatedArrayType)lastArg)) {
+                    getArrayDepth(varargs) == getArrayDepth((ArrayType) lastArg)) {
                 return parameters;
             }
         }
@@ -1320,11 +1323,15 @@ public class AnnotatedTypes {
      * @return  the depth of the provided array
      */
     public static int getArrayDepth(AnnotatedArrayType array) {
+        return getArrayDepth(array.getUnderlyingType());
+    }
+
+    public static int getArrayDepth(ArrayType array) {
         int counter = 0;
-        AnnotatedTypeMirror type = array;
+        TypeMirror type = array;
         while (type.getKind() == TypeKind.ARRAY) {
             counter++;
-            type = ((AnnotatedArrayType)type).getComponentType();
+            type = ((ArrayType)type).getComponentType();
         }
         return counter;
     }
