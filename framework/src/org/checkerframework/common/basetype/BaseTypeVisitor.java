@@ -834,16 +834,16 @@ public class BaseTypeVisitor<Factory extends GenericAnnotatedTypeFactory<?, ?, ?
 
     @Override
     public Void visitVariable(VariableTree node, Void p) {
+        if (node.getInitializer() == null) {
+            validateTypeOf(node);
+            return super.visitVariable(node, p);
+        }
+
         Pair<Tree, AnnotatedTypeMirror> preAssCtxt = visitorState.getAssignmentContext();
         visitorState.setAssignmentContext(Pair.of((Tree) node, atypeFactory.getAnnotatedType(node)));
 
         try {
-            boolean valid = validateTypeOf(node);
-            // If there's no assignment in this variable declaration, skip it.
-            if (valid && node.getInitializer() != null) {
-                commonAssignmentCheck(node, node.getInitializer(),
-                        "assignment.type.incompatible");
-            }
+            commonAssignmentCheck(node, node.getInitializer(), "assignment.type.incompatible");
             return super.visitVariable(node, p);
         } finally {
             visitorState.setAssignmentContext(preAssCtxt);
