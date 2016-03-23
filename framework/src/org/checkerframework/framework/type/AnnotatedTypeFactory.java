@@ -862,7 +862,7 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             return null; // dead code
         }
         if(shouldCache && treeToAnnotatedTypeMirrorCache.containsKey(tree)){
-            return treeToAnnotatedTypeMirrorCache.get(tree);
+            return treeToAnnotatedTypeMirrorCache.get(tree).deepCopy();
         }
 
         AnnotatedTypeMirror type;
@@ -883,7 +883,7 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         annotateImplicit(tree, type);
 
         if (shouldCache) {
-            treeToAnnotatedTypeMirrorCache.put(tree, type);
+            treeToAnnotatedTypeMirrorCache.put(tree, type.deepCopy());
         }
 
         if (TreeUtils.isClassTree(tree)) {
