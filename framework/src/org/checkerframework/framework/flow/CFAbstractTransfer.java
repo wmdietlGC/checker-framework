@@ -142,6 +142,8 @@ public abstract class CFAbstractTransfer<V extends CFAbstractValue<V>,
      */
     protected V getValueFromFactory(Tree tree, Node node) {
         GenericAnnotatedTypeFactory<V, S, T, ? extends CFAbstractAnalysis<V, S, T>> factory = analysis.atypeFactory;
+        boolean oldShouldCache = factory.shouldCache;
+        factory.shouldCache = false;
         Tree preTree = analysis.getCurrentTree();
         Pair<Tree, AnnotatedTypeMirror> preCtxt = factory.getVisitorState().getAssignmentContext();
         analysis.setCurrentTree(tree);
@@ -175,6 +177,7 @@ public abstract class CFAbstractTransfer<V extends CFAbstractValue<V>,
             }
         }
         AnnotatedTypeMirror at = factory.getAnnotatedType(tree);
+        factory.shouldCache = oldShouldCache;
         analysis.setCurrentTree(preTree);
         factory.getVisitorState().setAssignmentContext(preCtxt);
         return analysis.createAbstractValue(at);
