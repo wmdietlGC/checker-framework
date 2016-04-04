@@ -1257,18 +1257,23 @@ public class BaseTypeVisitor<Factory extends GenericAnnotatedTypeFactory<?, ?, ?
             // Check return type for single statement returns here
             AnnotatedTypeMirror ret = overridden.getReturnType();
             if (ret.getKind() != TypeKind.VOID) {
+                Pair<Tree, AnnotatedTypeMirror> previousAssignmentContext = visitorState.getAssignmentContext();
                 visitorState.setAssignmentContext(Pair.of((Tree) node, ret));
                 commonAssignmentCheck(ret, (ExpressionTree) node.getBody(),
                         "return.type.incompatible");
+                visitorState.setAssignmentContext(previousAssignmentContext);
             }
         }
-
+        Pair<Tree, AnnotatedTypeMirror> previousAssignmentContext = visitorState.getAssignmentContext();
         // Check parameters
         for (int i = 0; i < overridden.getParameterTypes().size(); ++i) {
-            AnnotatedTypeMirror overridingParm = atypeFactory.getAnnotatedType(node.getParameters().get(i));
-            commonAssignmentCheck(overridingParm, overridden.getParameterTypes().get(i), node.getParameters().get(i),
-                    "lambda.param.type.incompatible");
+            Tree parameterTree = node.getParameters().get(i);
+            AnnotatedTypeMirror overridingParm = atypeFactory.getAnnotatedType(parameterTree);
+            visitorState.setAssignmentContext(Pair.of(parameterTree,overridingParm));
+            commonAssignmentCheck(overridingParm, overridden.getParameterTypes().get(i), parameterTree,
+                                  "lambda.param.type.incompatible");
         }
+        visitorState.setAssignmentContext(previousAssignmentContext);
 
         // TODO: Post conditions?
 
