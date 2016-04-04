@@ -285,17 +285,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
     /** Size of LRU cache if one isn't specified using the atfCacheSize option. */
     private final static int DEFAULT_CACHE_SIZE = 300;
 
-    /** Mapping from a Tree to its annotated type; implicits have been applied. */
-    private final Map<Tree, AnnotatedTypeMirror> treeCache;
-
-    /** Mapping from a Tree to its annotated type; before implicits are applied,
-     * just what the programmer wrote. */
-    protected final Map<Tree, AnnotatedTypeMirror> fromTreeCache;
-
-    /** Mapping from an Element to its annotated type; before implicits are applied,
-     * just what the programmer wrote. */
-    private final Map<Element, AnnotatedTypeMirror> elementCache;
-
     /** Mapping from an Element to the source Tree of the declaration. */
     private final Map<Element, Tree> elementToTreeCache;
 
@@ -333,18 +322,9 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         this.cacheDeclAnnos = new HashMap<Element, Set<AnnotationMirror>>();
 
         this.shouldCache = !checker.hasOption("atfDoNotCache");
-        if (shouldCache) {
-            int cacheSize = getCacheSize();
-            this.treeCache = CollectionUtils.createLRUCache(cacheSize);
-            this.fromTreeCache = CollectionUtils.createLRUCache(cacheSize);
-            this.elementCache = CollectionUtils.createLRUCache(cacheSize);
-            this.elementToTreeCache = CollectionUtils.createLRUCache(cacheSize);
-        } else {
-            this.treeCache = null;
-            this.fromTreeCache = null;
-            this.elementCache = null;
-            this.elementToTreeCache = null;
-        }
+        int cacheSize = shouldCache ? getCacheSize() : 0;
+        this.elementToTreeCache = CollectionUtils.createLRUCache(cacheSize);
+
         this.typeFormatter = createAnnotatedTypeFormatter();
         this.annotationFormatter = createAnnotationFormatter();
     }
@@ -870,9 +850,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             ErrorReporter.errorAbort("AnnotatedTypeFactory.getAnnotatedType: null tree");
             return null; // dead code
         }
-        if (shouldCache && treeCache.containsKey(tree)) {
-            return treeCache.get(tree).deepCopy();
-        }
 
         AnnotatedTypeMirror type;
         if (TreeUtils.isClassTree(tree)) {
@@ -890,16 +867,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         }
 
         annotateImplicit(tree, type);
-
-        if (TreeUtils.isClassTree(tree) ||
-            tree.getKind() == Tree.Kind.METHOD) {
-            // Don't cache VARIABLE
-            if (shouldCache) {
-                treeCache.put(tree, type.deepCopy());
-            }
-        } else {
-            // No caching otherwise
-        }
 
         if (TreeUtils.isClassTree(tree)) {
             postProcessClassTree((ClassTree) tree);
@@ -956,9 +923,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
      * @return AnnotatedTypeMirror of the element with explicity and stub file annotations
      */
     public AnnotatedTypeMirror fromElement(Element elt) {
-        if (shouldCache && elementCache.containsKey(elt)) {
-            return elementCache.get(elt).deepCopy();
-        }
         if (elt.getKind() == ElementKind.PACKAGE)
             return toAnnotatedType(elt.asType(), false);
         AnnotatedTypeMirror type;
@@ -993,11 +957,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             type = null; // dead code
         }
 
-        // Caching is disabled if typesFromStubFiles == null, because calls to this
-        // method before the stub files are fully read can return incorrect
-        // results.
-        if (shouldCache && typesFromStubFiles != null)
-            elementCache.put(elt, type.deepCopy());
         return type;
     }
 
@@ -1058,13 +1017,10 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             ErrorReporter.errorAbort("AnnotatedTypeFactory.fromMember: not a method or variable declaration: " + tree);
             return null; // dead code
         }
-        if (shouldCache && fromTreeCache.containsKey(tree)) {
-            return fromTreeCache.get(tree).deepCopy();
-        }
+
         AnnotatedTypeMirror result = TypeFromTree.fromMember(this, tree);
         annotateInheritedFromClass(result);
-        if (shouldCache)
-            fromTreeCache.put(tree, result.deepCopy());
+
         return result;
     }
 
@@ -1085,15 +1041,8 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
      * @see TypeFromExpressionVisitor
      */
     private final AnnotatedTypeMirror fromExpression(ExpressionTree tree) {
-        if (shouldCache && fromTreeCache.containsKey(tree))
-            return fromTreeCache.get(tree).deepCopy();
-
         AnnotatedTypeMirror result = TypeFromTree.fromExpression(this, tree);
-
         annotateInheritedFromClass(result);
-
-        if (shouldCache)
-            fromTreeCache.put(tree, result.deepCopy());
         return result;
     }
 
@@ -1112,10 +1061,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
      * @return the (partially) annotated type of the type in the AST
      */
     /*package private*/ final AnnotatedTypeMirror fromTypeTree(Tree tree) {
-        if (shouldCache && fromTreeCache.containsKey(tree)) {
-            return fromTreeCache.get(tree).deepCopy();
-        }
-
         AnnotatedTypeMirror result = TypeFromTree.fromTypeTree(this, tree);
 
         // treat Raw as generic!
@@ -1137,8 +1082,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         }
 
         annotateInheritedFromClass(result);
-        if (shouldCache)
-            fromTreeCache.put(tree, result.deepCopy());
         return result;
     }
 
