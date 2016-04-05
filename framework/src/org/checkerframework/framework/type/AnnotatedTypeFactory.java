@@ -19,7 +19,6 @@ import org.checkerframework.framework.qual.PolyAll;
 import org.checkerframework.framework.qual.PolymorphicQualifier;
 import org.checkerframework.framework.qual.StubFiles;
 import org.checkerframework.framework.qual.SubtypeOf;
-import org.checkerframework.framework.source.Result;
 import org.checkerframework.framework.source.SourceChecker;
 import org.checkerframework.framework.stub.StubParser;
 import org.checkerframework.framework.stub.StubResource;
@@ -290,7 +289,7 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
     /**
      * Cache of AnnotatedTypeMirrors created by {@link #getAnnotatedType(Tree)}
      */
-    private final Map<Tree,Pair<Tree,AnnotatedTypeMirror>> getAnnotatedTypeCache;
+    private final Map<Tree,AnnotatedTypeMirror> treeToAnnotatedTypeMirrorCache;
 
     /**
      * Constructs a factory from the given {@link ProcessingEnvironment}
@@ -335,7 +334,7 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         // set to that size, set the load factor to one to avoid rehashes.
         float loadFactor = 1.0f;
         int initialCapacity = cacheSize;
-        this.getAnnotatedTypeCache = CollectionUtils.createLRUCache(initialCapacity, cacheSize, loadFactor);
+        this.treeToAnnotatedTypeMirrorCache = CollectionUtils.createLRUCache(initialCapacity, cacheSize, loadFactor);
 
         this.typeFormatter = createAnnotatedTypeFormatter();
         this.annotationFormatter = createAnnotationFormatter();
@@ -862,14 +861,8 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             ErrorReporter.errorAbort("AnnotatedTypeFactory.getAnnotatedType: null tree");
             return null; // dead code
         }
-        if (shouldCache && getAnnotatedTypeCache.containsKey(tree)) {
-            Pair<Tree, AnnotatedTypeMirror> pair = getAnnotatedTypeCache.get(tree);
-            if (getAssignmentContextTree() != pair.first) {
-                checker.report(Result.warning("context mismatch Old: " + pair.first +
-                                              " New: " + visitorState.getAssignmentContext()), tree);
-            } else {
-                return pair.second.deepCopy();
-            }
+        if(shouldCache && treeToAnnotatedTypeMirrorCache.containsKey(tree)){
+            return treeToAnnotatedTypeMirrorCache.get(tree).deepCopy();
         }
 
         AnnotatedTypeMirror type;
@@ -890,9 +883,7 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
         annotateImplicit(tree, type);
 
         if (shouldCache) {
-
-            Pair<Tree, AnnotatedTypeMirror> pair = Pair.of(getAssignmentContextTree(), type.deepCopy());
-            getAnnotatedTypeCache.put(tree, pair);
+            treeToAnnotatedTypeMirrorCache.put(tree, type.deepCopy());
         }
 
         if (TreeUtils.isClassTree(tree)) {
@@ -901,19 +892,6 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
 
         // System.out.println("AnnotatedTypeFactory::getAnnotatedType(Tree) result: " + type);
         return type;
-    }
-
-    /**
-     * The tree that is the current assignment context or null if there is no
-     * assignment context.
-     * @return Tree that is the current assignment context or null
-     */
-    private Tree getAssignmentContextTree() {
-        Pair<Tree, AnnotatedTypeMirror> pair = visitorState.getAssignmentContext();
-        if (pair == null) {
-            return null;
-        }
-        return pair.first;
     }
 
     /**
