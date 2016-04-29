@@ -72,8 +72,8 @@
         </ant>
     </target>
 
-    <target name="clean-all" description="Remove generated files"
-            depends="clean,clean-jdk">
+    <target name="clean" description="Remove generated files"
+            depends="clean-nocleanjdk,clean-jdk">
     </target>
 
     <target name="clean-jdk" description="Remove generated jdkX.jar files">
@@ -86,7 +86,7 @@
         <delete file="jdk/jdk9.jar"/>
     </target>
 
-    <target name="clean" description="Remove generated files, but not the jdkX.jar files">
+    <target name="clean-nocleanjdk" description="Remove generated files, but not the jdkX.jar files">
         <ant dir="${framework.loc}">
             <target name="clean"/>
         </ant>
@@ -543,11 +543,19 @@
     </target>
 
     <target name="all-tests" depends="all-tests-nojtreg, jtreg-tests"
+            description="Run tests for all checkers and the framework"/>
+
+    <!-- Used to guarantee that targets executed from other ant scripts do not cause unnecessary rebuilds -->
+    <target name="all-tests-nobuildjdk" depends="all-tests-nojtreg-nobuildjdk, jtreg-tests"
             description="Run tests for all checkers and the framework, WITHOUT updating jdkX.jar">
     </target>
 
-    <target name="all-tests-nojtreg" depends="jar, jdk.jar.exists, all-tests-nojtreg-nobuild"
-            description="Run tests for all checkers and the framework, except jtreg tests">
+    <target name="all-tests-nojtreg" depends="jdk.jar, all-tests-nojtreg-nobuildjdk"
+            description="Run tests for all checkers and the framework, except jtreg tests"/>
+
+    <!-- Used to guarantee that targets executed from other ant scripts do not cause unnecessary rebuilds -->
+    <target name="all-tests-nojtreg-nobuildjdk" depends="jar, jdk.jar.exists, all-tests-nojtreg-nobuild"
+            description="Run tests for all checkers and the framework, except jtreg tests, WITHOUT updating jdkX.jar">
     </target>
 
     <!-- Used to guarantee that targets executed from other ant scripts do not cause unnecessary rebuilds -->
@@ -608,11 +616,11 @@
             </batchtest>
         </junit>
 
-        <antcall target="nullness-extra-tests"/>
+        <antcall target="nullness-extra-tests-nobuildjdk"/>
 
 	<antcall target="command-line-tests"/>
 
-        <antcall target="example-tests"/>
+        <antcall target="example-tests-nobuildjdk"/>
 
         <antcall target="check-tutorial"/>
 
@@ -679,8 +687,13 @@
     </target>
 
     <target name="nullness-tests"
-            depends="jar,jdk.jar.exists,build-tests,nullness-base-tests,nullness-base-tests-with-asserts,nullness-concurrent-tests,nullness-skipuses-tests,nullness-skipdefs-tests,nullness-uninit-tests,nullness-uninit-tests-with-asserts,nullness-assume-assertions-are-enabled-tests,nullness-extra-tests,nullness-reflection-tests,nullness-invariantarrays-tests,nullness-safedefaultsbytecode-tests,nullness-safedefaultssourcecode-tests"
+            depends="jdk.jar,nullness-tests-nobuildjdk"
             description="Run tests for the Nullness Checker">
+    </target>
+
+    <target name="nullness-tests-nobuildjdk"
+            depends="jar,jdk.jar.exists,build-tests,nullness-base-tests,nullness-base-tests-with-asserts,nullness-concurrent-tests,nullness-skipuses-tests,nullness-skipdefs-tests,nullness-uninit-tests,nullness-uninit-tests-with-asserts,nullness-assume-assertions-are-enabled-tests,nullness-extra-tests-nobuildjdk,nullness-reflection-tests,nullness-invariantarrays-tests,nullness-safedefaultsbytecode-tests,nullness-safedefaultssourcecode-tests"
+            description="Run tests for the Nullness Checker, WITHOUT updating jdkX.jar">
     </target>
 
     <target name="nullness-base-tests" depends="jar,build-tests"
@@ -721,8 +734,11 @@
 
     <!-- Differs from other targets in that it is defined via a Makefile and
        is not run via the "-run-tests" Antfile target, as other tests are. -->
-    <target name="nullness-extra-tests" depends="dist,jdk.jar.exists,build-tests"
-            description="Run extra tests for the Nullness Checker">
+    <target name="nullness-extra-tests" depends="dist,build-tests,nullness-extra-tests-nobuildjdk"
+            description="Run extra tests for the Nullness Checker"/>
+
+    <target name="nullness-extra-tests-nobuildjdk" depends="dist-nobuildjdk,jdk.jar.exists,build-tests"
+            description="Run extra tests for the Nullness Checker, WITHOUT updating jdkX.jar">
         <exec executable="chmod" failonerror="true">
             <arg line="+x ${basedir}/bin/javac"/>
         </exec>
@@ -932,8 +948,12 @@
         </antcall>
     </target>
 
-    <target name="example-tests" depends="dist,jdk.jar.exists,build-tests"
+    <target name="example-tests" depends="dist,example-tests-nobuildjdk"
             description="Run tests for the example programs">
+    </target>
+
+    <target name="example-tests-nobuildjdk" depends="dist-nobuildjdk,jdk.jar.exists,build-tests"
+            description="Run tests for the example programs, WITHOUT updating jdkX.jar">
       <exec executable="chmod" failonerror="true">
         <arg line="+x ${basedir}/bin/javac"/>
       </exec>
@@ -1191,8 +1211,8 @@
 
     <!-- TODO: like for -run-checker this only checks checker/src.
          Improve both. -->
-    <!-- Depend on dist to make sure everything compiles. -->
-    <target name="check-errorprone" depends="dist, clean-nojar"
+    <!-- Depend on dist-nobuildjdk to make sure everything compiles. -->
+    <target name="check-errorprone" depends="dist-nobuildjdk, clean-nojar"
             description="Run the error-prone compiler on the Checker Framework">
         <mkdir dir="${build}"/>
         <javac failonerror="true"
@@ -1267,7 +1287,24 @@
 
     </target>
 
-    <target name="jdk.jar" depends="jar, -jdk.is8, -jdk.8, -jdk.other"
+    <target name="jdk.jar" depends="jar, -jdk.is8, -jdk.jar.8, -jdk.jar.other"
+            description="Fetch the instrumented jdkX.jar matching the version of the JDK specified by JAVA_HOME">
+    </target>
+
+    <target name="-jdk.jar.8" if="is8">
+      <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar"
+           dest="jdk"
+           usetimestamp="true" />
+    </target>
+
+    <target name="-jdk.jar.other" unless="is8">
+      <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk7.jar"
+           dest="jdk"
+           usetimestamp="true" />
+    </target>
+
+    <target name="build-jdk"
+            depends="jar, -jdk.is8, -build-jdk.8, -build-jdk.other"
             description="Create the instrumented jdkX.jar using the JDK specified by JAVA_HOME">
     </target>
 
@@ -1277,10 +1314,10 @@
         </condition>
     </target>
 
-    <target name="-jdk.8">
+    <target name="-build-jdk.8">
       <property name="afu.jar" value="${annotation.tools}/annotation-file-utilities/annotation-file-utilities.jar"/>
       <available property="afu.exist" file="${afu.jar}" />
-      <fail unless="afu.exist" message="Could not find annotation-file-utilities.jar: ${afu.jar}.  You must build Annotation Tools; see http://types.cs.washington.edu/checker-framework/current/checkers-manual.html#build-source" />
+      <fail unless="afu.exist" message="Could not find annotation-file-utilities.jar: ${afu.jar}.  You must build Annotation Tools; see http://types.cs.washington.edu/checker-framework/current/checker-framework-manual.html#build-source" />
 
       <exec executable="bash" failonerror="true">
          <arg value="jdk/build8.sh"/>
@@ -1288,7 +1325,7 @@
       </exec>
     </target>
 
-    <target name="-jdk.other" unless="is8">
+    <target name="-build-jdk.other" unless="is8">
       <property name="afu.jar" value="${annotation.tools}/annotation-file-utilities/annotation-file-utilities.jar"/>
       <available property="afu.exist" file="${afu.jar}" />
       <fail unless="afu.exist" message="Could not find annotation-file-utilities.jar: ${afu.jar}.  You must build Annotation Tools; see http://types.cs.washington.edu/checker-framework/current/checker-framework-manual.html#build-source" />
@@ -1299,18 +1336,23 @@
       </exec>
     </target>
 
-    <target name="dist-release" depends="clean-all, dist-all, all-tests-nojtreg, javadoc.jar, sources.jar"
+    <target name="dist-release" depends="clean, dist-all, all-tests-nojtreg-nobuild, javadoc.jar, sources.jar"
             description="Everything necessary to prepare this project for distribution: binary distribution, testing, and documentation.">
     </target>
 
     <target name="dist-all"
-            depends="-prep-dist,jar,all.jdks.jar,dist"
+            depends="-prep-dist,jar,all.jdks.jar,dist-nobuildjdk"
             description="Build checker.jar, checker-qual.jar, and all jdkX.jar(s).  This comprises all jars needed to run the framework.">
     </target>
 
     <target name="dist"
+            depends="-prep-dist,jar,jdk.jar,dist-nobuildjdk"
+            description="Build checker.jar, checker-qual.jar, and one jdkX.jar where X is the major version number of java in JAVA_HOME (only Java 7/8/9 are currently supported).  This comprises all jars needed to run the framework.">
+    </target>
+
+    <target name="dist-nobuildjdk"
             depends="-prep-dist,jar,jdk.jar.exists"
-            description="Build checker.jar and checker-qual.jar.  Move all relevant files to the binary directory.">
+            description="Build checker.jar, checker-qual.jar WITHOUT updating jdkX.jar.  Move all relevant files to the binary directory.">
 
         <mkdir dir="dist" />
 
