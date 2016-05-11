@@ -34,7 +34,7 @@ CTSYM="${JAVA_HOME}/lib/ct.sym"
 CP="${BINDIR}:${BOOTDIR}:${LT_BIN}:${TOOLSJAR}:${CF_BIN}:${CF_JAR}"
 JFLAGS="-XDignore.symbol.file=true -Xmaxerrs 20000 -Xmaxwarns 20000\
  -source 8 -target 8 -encoding ascii -cp ${CP}"
-PROCESSORS="interning,nullness,signature"
+PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,nullness,signature"
 PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=source\
  -AprintErrorStack -Awarns"
 
@@ -80,7 +80,9 @@ finish() {
         fi
     done
     # recreate jar
-    jar cf ${CF_DIST}/jdk8.jar *
+    rm -f ${WORKDIR}/jdk.jar
+    jar cf ${WORKDIR}/jdk.jar *
+    cp ${WORKDIR}/jdk.jar ${CF_DIST}/jdk8.jar
     cd ${WORKDIR}
     [ ${PRESERVE} -ne 0 ] || rm -rf sym
     return 0
