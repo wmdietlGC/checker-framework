@@ -19,11 +19,16 @@ CP=".:${JDK}/build/classes:${LTJAR}:${JDJAR}:${CFJAR}:${AFUJAR}:${CLASSPATH}"
 # return value
 RET=0
 
+# make vars visible to awk
+export WD
+export TMPDIR
+
 
 # Stage 1: extract JAIFs from nullness JDK
 
 [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 rm -rf "${TMPDIR}"
+mkdir "${TMPDIR}"
 
 (
     cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/build"
@@ -44,6 +49,11 @@ rm -rf "${TMPDIR}"
 
 # Stage 2: convert stub files to JAIFs
 
+# download annotation definitions
+[ -r annotation-defs.jaif ]\
+ || wget https://types.cs.washington.edu/checker-framework/annotation-defs.jaif\
+ || exit $?
+
 (
     cd "${CHECKERFRAMEWORK}"
     [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
@@ -51,27 +61,40 @@ rm -rf "${TMPDIR}"
     for f in `find * -name '*\.astub' -print` ; do
         java -cp "${CP}" org.checkerframework.framework.stub.ToIndexFileConverter "$f"
         x=$?
-        if [ $x -eq 0 ] ; then
-            d=`dirname $f`
-            g="$d/`basename $f .astub`.jaif"
-            mkdir -p "${TMPDIR}/$d"
-            cat "$g" >> "${TMPDIR}/$g"  # in case created in prev. stage
-            rm "${TMPDIR}/$g"
-        else
-            [ ${RET} -ne 0 ] || RET=$x
-        fi
+        [ ${RET} -ne 0 ] || RET=$x
+        g="`dirname $f`/`basename $f .astub`.jaif"
+        [ -r "$g" ] && cat "$g" && rm -f "$g"
     done
-)
+) | awk '
+    # save class sections from converted JAIFs to hierarchical JAIF directory
+    BEGIN {out="";adefs=ENVIRON["WD"]"/annotation-defs.jaif"}
+    /^package / {
+        l=$0;i=index($2,":");d=(i?substr($2,1,i-1):$2)
+        if(d){gsub(/\./,"/",d)}else{d=""}
+        d=ENVIRON["TMPDIR"]"/"d
+    }
+    /^class / {
+        i=index($2,":");c=(i?substr($2,1,i-1):$2)
+        if(c) {
+            o=d"/"c".jaif"
+            if (o!=out) {
+                if(out){close(out)};out=o
+                if(system("test -s "out)!=0) {
+                    system("mkdir -p "d" && cp "adefs" "out)
+                    printf("%s\n",l)>>out  # current pkg decl
+                }
+            }
+        }
+    }
+    {if(out){print>>out}}
+    END {close(out)}
+'
 
 [ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 
 
 # Stage 3: combine JAIFs and write to stdout
 
-# download annotation definitions
-[ -r annotation-defs.jaif ]\
- || wget https://types.cs.washington.edu/checker-framework/annotation-defs.jaif\
- || exit $?
 rm -rf "${JAIFDIR}"
 
 (
