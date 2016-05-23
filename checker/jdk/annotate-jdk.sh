@@ -1,6 +1,8 @@
 #!/bin/sh
 
-# annotates the JDK
+# generates the annotated JDK from old annotation sources (nullness JDK
+# and subfiles); to be run after building the full JDK (from source,
+# without annotations) and the Checker Framework
 
 WD="`pwd`"
 JDK="${WD}/jdk"       # JDK to be annotated
@@ -22,6 +24,13 @@ RET=0
 # make vars visible to awk
 export WD
 export TMPDIR
+
+
+# Stage 0: restore old comments
+
+# download patch
+[ -r annotated-jdk-comment-patch.jaif ] || wget https://types.cs.washington.edu/checker-framework/annotated-jdk-comment-patch.jaif || exit $?
+(cd "${JDK}" && patch -p1 < annotated-jdk-comment-patch.jaif)
 
 
 # Stage 1: extract JAIFs from nullness JDK
@@ -93,7 +102,7 @@ mkdir "${TMPDIR}"
 [ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 
 
-# Stage 3: combine JAIFs and write to stdout
+# Stage 3: incorporate Stage 2 JAIFs into hierarchy built in Stage 1
 
 rm -rf "${JAIFDIR}"
 
@@ -118,7 +127,7 @@ rm -rf "${JAIFDIR}"
 [ ${RET} -ne 0 ] && echo "stage 3 failed" 1>&2 && exit ${RET}
 
 
-# Stage 4: insert annotations from JAIFs into JDK
+# Stage 4: insert annotations from JAIFs into JDK source
 
 (
     cd "${JDK}/src/share/classes" || exit $?
@@ -137,5 +146,10 @@ rm -rf "${JAIFDIR}"
 exit ${RET}
 
 
-# Stage 5: compile (TODO)
+# Stage 5: compile
+# (to be integrated)
+
+
+# Stage 6: insert annotations into symbol file
+# (to be integrated)
 
