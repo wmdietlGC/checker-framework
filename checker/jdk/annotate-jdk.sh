@@ -4,9 +4,9 @@
 # and subfiles); to be run after building the full JDK (from source,
 # without annotations) and the Checker Framework
 
-WD="`pwd`"
+WD="`pwd`"            # run from top directory of jdk8u clone
 JDK="${WD}/jdk"       # JDK to be annotated
-TMPDIR="${WD}/tmp" # directory for generated JAIFs
+TMPDIR="${WD}/tmp"    # directory for temporary files
 JAIFDIR="${WD}/jaifs" # directory for generated JAIFs
 
 # parameters derived from environment
@@ -35,12 +35,12 @@ export TMPDIR
 
 # Stage 1: extract JAIFs from nullness JDK
 
-[ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 rm -rf "${TMPDIR}"
 mkdir "${TMPDIR}"
 
 (
     cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/build"
+    [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 
     for f in `find * -name '*\.class' -print` ; do
         CLASSPATH="${CP}" extract-annotations "$f" 1>&2
