@@ -1,8 +1,45 @@
 #!/bin/sh
 
-# generates the annotated JDK from old annotation sources (nullness JDK
-# and subfiles); to be run after building the full JDK (from source,
-# without annotations) and the Checker Framework
+# Generates the annotated JDK from old annotation sources (nullness JDK
+# and stubfiles).  The goal is to transfer all the annotations from the
+# sources to the JDK source, which will be the new home for all the
+# annotations associated with the checkers that are distributed with the
+# Checker Framework.
+#
+# Prerequisites:
+#
+# 1.  Clone and build the checker framework from source.
+#     git clone https://github.com/typetools/checker-framework
+#     cd checker-framework && ant
+#     
+# 2.  Clone the OpenJDK 8u repository and sub-repositories.
+#     hg clone http://hg.openjdk.java.net
+#     cd jdk8u && sh ./get_source
+#
+# 3.  Build OpenJDK, following the instructions in README-builds.html.
+#
+# 4.  Set JAVA_HOME to build/(name of output directory).
+#
+# This script should be run from the top-level OpenJDK directory.
+#
+# 
+# Build stages:
+#
+# 0.  Restore comments from old nullness JDK and stubfiles.
+#     (These comments explain non-intuitive annotation choices, etc.
+#     This stage should run only once.)
+#
+# 1.  Extract annotations from the nullness JDK into JAIFs.
+#
+# 2.  Convert old stubfiles into JAIFs.
+#
+# 3.  Combine the results of the previous two stages.
+#
+# 4.  Insert annotations from JAIFs into JDK source files.
+#
+# 5.  Compile the annotated JDK.
+#
+# 6.  Combine the results of the previous two stages.
 
 WD="`pwd`"            # run from top directory of jdk8u clone
 JDK="${WD}/jdk"       # JDK to be annotated
@@ -98,16 +135,16 @@ mkdir "${TMPDIR}"
     {if(out){print>>out}}
     END {close(out)}
 '
+# TODO: insert @AnnotatedFor annotations
 
 [ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 
 
 # Stage 3: incorporate Stage 2 JAIFs into hierarchy built in Stage 1
 
-rm -rf "${JAIFDIR}"
-
 (
-    # write out JAIFs in TMPDIR, replacing (bogus) annotation defs
+    rm -rf "${JAIFDIR}"
+    # write out JAIFs from TMPDIR, replacing (bogus) annotation defs
     for f in `(cd "${TMPDIR}" && find * -name '*\.jaif' -print)` ; do
         # first write out standard annotation defs
         g="${JAIFDIR}/$f"
@@ -130,9 +167,14 @@ rm -rf "${JAIFDIR}"
 # Stage 4: insert annotations from JAIFs into JDK source
 
 (
+    # first ensure source is unchanged from repo
     cd "${JDK}/src/share/classes" || exit $?
+    hg revert -C com java javax jdk org sun
+    rm -rf annotated
+
     for f in `find * -name '*\.java' -print` ; do
         BASE="${JAIFDIR}/`dirname $f`/`basename $f .java`"
+        # must insert annotations on inner classes as well
         for g in ${BASE}.jaif ${BASE}\$*.jaif ; do
             if [ -r "$g" ] ; then
                 CLASSPATH=${CP} insert-annotations-to-source "$g" "$f"
@@ -140,16 +182,22 @@ rm -rf "${JAIFDIR}"
             fi
         done
     done
+
+    # copy annotated source files over originals
+    rsync -au annotated/* .
 )
 
-[ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2
-exit ${RET}
+[ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
 
 
 # Stage 5: compile
 # (to be integrated)
 
+#TODO
+
 
 # Stage 6: insert annotations into symbol file
 # (to be integrated)
+
+#TODO
 
