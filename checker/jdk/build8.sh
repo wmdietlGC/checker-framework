@@ -114,12 +114,16 @@ grep -q 'not found' ${WORKDIR}/0.log
 [ $? -eq 0 ] && exit 0
 (cd ${BOOTDIR} && jar cf ../jdk.jar *)
 
+# These packages are interdependent and cannot be compiled individually.
+# Compile them all together.
 echo "build internal and security packages"
 find ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
  ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
  | tee ${WORKDIR}/log/1.log
 [ $? -ne 0 ] && exit 1
 
+# Build one package at a time because building all of them together makes
+# the compiler run out of memory.
 echo "build one package at a time w/processors on"
 for d in ${DIRS} ; do
     ls $d/*.java 2>/dev/null || continue
