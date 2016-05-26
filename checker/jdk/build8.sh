@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# compile Package At A Time
+# build annotated JDK 8
 
 # ensure CHECKERFRAMEWORK set
 if [ -z "$CHECKERFRAMEWORK" ] ; then
@@ -92,13 +92,12 @@ rm -rf ${BOOTDIR} ${BINDIR}
 mkdir -p ${BOOTDIR} ${BINDIR}
 cd ${SRCDIR}
 
-SRC="`find com/sun/jarsigner com/sun/security com/sun/tools/attach \
-           java javax/management jdk sun \
-        \( -name dc -o -name jconsole -o -name repo -o -name snmp \) -prune \
-        -o -name '*\.java' -print`"
-DIRS=`(cd ${WORKDIR} && cat DIRS)`
-# AGENDA keeps track of source files remaining to be processed
-AGENDA="$SRC"
+DIRS="`find com java javax jdk org sun \( -name META_INF -o -name dc\
+ -o -name example -o -name jconsole -o -name pept -o -name snmp\
+ -o -name security -o -name internal \) -prune -o -type d -print`"
+SI_DIRS="`find com java javax jdk org sun \( -name META_INF -o -name dc\
+ -o -name example -o -name jconsole -o -name pept -o -name snmp -prune \)\
+ -o \( -name security -o -name internal \) -type d -print`"
 
 if [ -z "${DIRS}" ] ; then
     echo "no annotated source files"
@@ -106,27 +105,37 @@ if [ -z "${DIRS}" ] ; then
 fi
 
 echo "build bootstrap JDK"
-${LT_JAVAC} -g -d ${BOOTDIR} ${JFLAGS} ${SRC} | tee ${WORKDIR}/LOG
+rm -rf ${WORKDIR}/log
+mkdir -p ${WORKDIR}/log
+find ${DIRS} ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
+ ${LT_JAVAC} -g -d ${BOOTDIR} ${JFLAGS} | tee ${WORKDIR}/0.log
 [ $? -ne 0 ] && exit 1
-grep -q 'not found' ${WORKDIR}/LOG
+grep -q 'not found' ${WORKDIR}/0.log
 [ $? -eq 0 ] && exit 0
 (cd ${BOOTDIR} && jar cf ../jdk.jar *)
 
+echo "build internal and security packages"
+find ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
+ ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
+ | tee ${WORKDIR}/log/1.log
+[ $? -ne 0 ] && exit 1
+
 echo "build one package at a time w/processors on"
-rm -rf ${WORKDIR}/log
-mkdir -p ${WORKDIR}/log
 for d in ${DIRS} ; do
+    ls $d/*.java 2>/dev/null || continue
     echo :$d: `echo $d/*.java | wc -w` files
     ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS} \
             "$d"/*.java 2>&1 | tee ${WORKDIR}/log/`echo "$d" | tr / .`.log
 done
 
+# AGENDA keeps track of source files remaining to be processed
 AGENDA=`cat ${WORKDIR}/log/* | grep -l 'Compilation unit: ' | awk '{print$3}' | sort -u`
 if [ -z "${AGENDA}" ] ; then
-    finish | tee -a ${WORKDIR}/LOG
+    finish | tee ${WORKDIR}/log/2.log
     [ $? -eq 0 ] && exit 0
 fi
 
-echo "failed"
+echo "failed" | tee ${WORKDIR}/log/2.log
+echo "${AGENDA}" | tee -a ${WORKDIR}/log/2.log
 exit 1
 
