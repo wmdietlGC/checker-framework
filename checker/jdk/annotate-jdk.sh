@@ -17,6 +17,7 @@
 #     cd jdk8u && sh ./get_source
 #
 # 3.  Build OpenJDK, following the instructions in README-builds.html.
+#     (Dan isn't sure this is necessary.)
 #
 # 4.  Set JAVA_HOME to build/(name of output directory).
 #
