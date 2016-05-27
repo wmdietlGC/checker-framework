@@ -41,11 +41,16 @@
 # 5.  Compile the annotated JDK.
 #
 # 6.  Combine the results of the previous two stages.
+#
+#
+# TODO: What comes next?
 
+SCRIPTDIR=`cd \`dirname $0\` && pwd`
 WD="`pwd`"            # run from top directory of jdk8u clone
 JDK="${WD}/jdk"       # JDK to be annotated
 TMPDIR="${WD}/tmp"    # directory for temporary files
 JAIFDIR="${WD}/jaifs" # directory for generated JAIFs
+PATCH=${SCRIPTDIR}/ad-hoc.diff
 
 # parameters derived from environment
 JSR308=`[ -d "${CHECKERFRAMEWORK}" ] && cd "${CHECKERFRAMEWORK}/.." && pwd`
@@ -186,19 +191,10 @@ mkdir "${TMPDIR}"
 
     # copy annotated source files over originals
     rsync -au annotated/* .
+
+    # apply ad-hoc patch to correct miscellaneous errors
+    patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
 )
 
 [ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
-
-
-# Stage 5: compile
-# (to be integrated)
-
-#TODO
-
-
-# Stage 6: insert annotations into symbol file
-# (to be integrated)
-
-#TODO
 
