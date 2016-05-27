@@ -1317,6 +1317,7 @@
 
     <target name="-jdk.8">
         <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar" dest="dist/jdk8.jar" skipexisting="true"/>
+        <copy file="dist/jdk8.jar" tofile="jdk/jdk.jar"/>
     </target>
 
     <target name="-jdk.other" unless="is8">
