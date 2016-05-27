@@ -1305,7 +1305,7 @@
 
     </target>
 
-    <target name="jdk.jar" depends="jar, -jdk.is8, jdk.8, jdk.other"
+    <target name="jdk.jar" depends="jar, -jdk.is8, -jdk.8, -jdk.other"
             description="Download the instrumented jdkX.jar of the JDK version specified by JAVA_HOME">
     </target>
 
@@ -1319,11 +1319,11 @@
         <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar" dest="dist/jdk8.jar" skipexisting="true"/>
     </target>
 
-    <target name="-jdk.other">
+    <target name="-jdk.other" unless="is8">
         <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk7.jar" dest="dist/jdk7.jar" skipexisting="true"/>
     </target>
 
-    <target name="build-jdk" depends="jar, -jdk.is8, -jdk.8, -jdk.other"
+    <target name="build-jdk" depends="jar, -jdk.is8, -build-jdk.8, -build-jdk.other"
             description="Create the instrumented jdkX.jar using the JDK specified by JAVA_HOME">
     </target>
 
