@@ -69,11 +69,14 @@ export WD
 export TMPDIR
 
 
-# Stage 0: restore old comments
+# Stage 0: restore old comments (should happen only once)
 
+COMMENTS=0  # non-zero to enable
+if [ ${COMMENTS} -ne 0 ] ; then
 # download patch
 [ -r annotated-jdk-comment-patch.jaif ] || wget https://types.cs.washington.edu/checker-framework/annotated-jdk-comment-patch.jaif || exit $?
 (cd "${JDK}" && patch -p1 < annotated-jdk-comment-patch.jaif)
+fi
 
 
 # Stage 1: extract JAIFs from nullness JDK
@@ -91,7 +94,7 @@ mkdir "${TMPDIR}"
     done
 
     for f in `find * -name '*\.jaif' -print` ; do
-        mkdir -p "${TMPDIR}/`dirname $f`" && sed 's/^class .*$/& @AnnotatedFor({"nullness"})/' < "$f" > "${TMPDIR}/$f"
+        mkdir -p "${TMPDIR}/`dirname $f`" && cp "$f" "${TMPDIR}/$f"
         [ ${RET} -eq 0 ] && RET=$?
     done
 )
@@ -141,7 +144,6 @@ mkdir "${TMPDIR}"
     {if(out){print>>out}}
     END {close(out)}
 '
-# TODO: insert @AnnotatedFor annotations
 
 [ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 
@@ -157,13 +159,14 @@ mkdir "${TMPDIR}"
         mkdir -p `dirname $g` && cp annotation-defs.jaif "$g"
 
         # then strip out empty annotation defs
+        # also generate and insert @AnnotatedFor annotations
         awk '
             BEGIN {x=1}                       # initial state: print on
             /^annotation/ {x=-1}              # omit until class or package
             /^package/ {x=0;i=0;split("",a)}  # print only if class follows
             /^class/ {for(j=0;j<i;++j){print a[j]};split("",a);x=1;i=0}
             {if(x==0){a[i++]=$0}{if(x>0)print}}
-        ' < "${TMPDIR}/$f" >> "$g"
+        ' < "${TMPDIR}/$f" | java -cp ${CP} annotations.util.AddAnnotatedFor >> "$g"
     done
 )
 
