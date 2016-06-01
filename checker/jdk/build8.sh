@@ -94,7 +94,7 @@ grep -q -l 'Compilation unit: ' "${WORKDIR}/log/*"
 if [ $? -ne 0 ] ; then
     echo "failed" | tee ${WORKDIR}/log/2.log
     cat "${WORKDIR}/log/*" | grep -l 'Compilation unit: ' | awk '{print$3}'\
- | sort -u` | tee -a ${WORKDIR}/log/2.log
+ | sort -u | tee -a ${WORKDIR}/log/2.log
     exit 1
 fi
 

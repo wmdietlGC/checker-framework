@@ -85,7 +85,7 @@ rm -rf "${TMPDIR}"
 mkdir "${TMPDIR}"
 
 (
-    cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/build"
+    cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/build" || exit 1
     [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 
     for f in `find * -name '*\.class' -print` ; do
@@ -94,7 +94,7 @@ mkdir "${TMPDIR}"
     done
 
     for f in `find * -name '*\.jaif' -print` ; do
-        mkdir -p "${TMPDIR}/`dirname $f`" && cp "$f" "${TMPDIR}/$f"
+        mkdir -p "${TMPDIR}/`dirname $f`" && mv "$f" "${TMPDIR}/$f"
         [ ${RET} -eq 0 ] && RET=$?
     done
 )
@@ -113,7 +113,7 @@ mkdir "${TMPDIR}"
     cd "${CHECKERFRAMEWORK}"
     [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 
-    for f in `find * -name '*\.astub' -print` ; do
+    for f in `find * -name 'jdk\.astub' -print` ; do
         java -cp "${CP}" org.checkerframework.framework.stub.ToIndexFileConverter "$f"
         x=$?
         [ ${RET} -ne 0 ] || RET=$x
@@ -166,7 +166,7 @@ mkdir "${TMPDIR}"
             /^package/ {x=0;i=0;split("",a)}  # print only if class follows
             /^class/ {for(j=0;j<i;++j){print a[j]};split("",a);x=1;i=0}
             {if(x==0){a[i++]=$0}{if(x>0)print}}
-        ' < "${TMPDIR}/$f" | java -cp ${CP} annotations.util.AddAnnotatedFor >> "$g"
+        ' < "${TMPDIR}/$f" | java -cp ${CP} org.checkerframework.framework.stub.AddAnnotatedFor >> "$g"
     done
 )
 
@@ -191,13 +191,11 @@ mkdir "${TMPDIR}"
             fi
         done
     done
-
-    # copy annotated source files over originals
-    rsync -au annotated/* .
-
-    # apply ad-hoc patch to correct miscellaneous errors
-    patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
 )
 
 [ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
+# copy annotated source files over originals
+rsync -au annotated/* .
+# apply ad-hoc patch to correct miscellaneous errors
+patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
 
