@@ -58,7 +58,7 @@ public class AddAnnotatedFor {
    * Reads JAIF from standard input, adds any appropriate
    * {@code @AnnotatedFor} annotations, and writes to standard output.
    *
-   * @param args ignored 
+   * @param args ignored
    */
   public static void main(String[] args)
       throws IOException, DefException, ParseException {
@@ -164,16 +164,24 @@ public class AddAnnotatedFor {
     @Override
     public Void visitField(AField el,
         final Set<String> annotatedFor) {
-      el.init.accept(this, annotatedFor);
+      if (el.init != null) {
+        el.init.accept(this, annotatedFor);
+      }
       return visitDeclaration(el, annotatedFor);
     }
 
     @Override
     public Void visitMethod(AMethod el,
         final Set<String> annotatedFor) {
-      el.body.accept(this, annotatedFor);
-      el.receiver.accept(this, annotatedFor);
-      el.returnType.accept(this, annotatedFor);
+      if (el.body != null) {
+        el.body.accept(this, annotatedFor);
+      }
+      if (el.receiver != null) {
+        el.receiver.accept(this, annotatedFor);
+      }
+      if (el.returnType != null) {
+        el.returnType.accept(this, annotatedFor);
+      }
       for (ATypeElement e : el.bounds.values()) {
         e.accept(this, annotatedFor);
       }

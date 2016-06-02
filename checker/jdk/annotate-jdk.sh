@@ -45,28 +45,24 @@
 #
 # TODO: What comes next?
 
-SCRIPTDIR=`cd \`dirname $0\` && pwd`
-WD="`pwd`"            # run from top directory of jdk8u clone
-JDK="${WD}/jdk"       # JDK to be annotated
-TMPDIR="${WD}/tmp"    # directory for temporary files
-JAIFDIR="${WD}/jaifs" # directory for generated JAIFs
-PATCH=${SCRIPTDIR}/ad-hoc.diff
+export SCRIPTDIR=`cd \`dirname $0\` && pwd`
+export WD="`pwd`"            # run from top directory of jdk8u clone
+export JDK="${WD}/jdk"       # JDK to be annotated
+export TMPDIR="${WD}/tmp"    # directory for temporary files
+export JAIFDIR="${WD}/jaifs" # directory for generated JAIFs
+export PATCH=${SCRIPTDIR}/ad-hoc.diff
 
 # parameters derived from environment
-JSR308=`[ -d "${CHECKERFRAMEWORK}" ] && cd "${CHECKERFRAMEWORK}/.." && pwd`
-AFU="${JSR308}/annotation-tools"
-AFUJAR="${AFU}/annotation-file-utilities/annotation-file-utilities.jar"
-CFJAR="${CHECKERFRAMEWORK}/checker/dist/checker.jar"
-LTJAR="${JSR308}/jsr308-langtools/dist/lib/javac.jar"
-JDJAR="${JSR308}/jsr308-langtools/dist/lib/javadoc.jar"
-CP=".:${JDK}/build/classes:${LTJAR}:${JDJAR}:${CFJAR}:${AFUJAR}:${CLASSPATH}"
+export JSR308=`[ -d "${CHECKERFRAMEWORK}" ] && cd "${CHECKERFRAMEWORK}/.." && pwd`
+export AFU="${JSR308}/annotation-tools"
+export AFUJAR="${AFU}/annotation-file-utilities/annotation-file-utilities.jar"
+export CFJAR="${CHECKERFRAMEWORK}/checker/dist/checker.jar"
+export LTJAR="${JSR308}/jsr308-langtools/dist/lib/javac.jar"
+export JDJAR="${JSR308}/jsr308-langtools/dist/lib/javadoc.jar"
+export CP=".:${JDK}/build/classes:${LTJAR}:${JDJAR}:${CFJAR}:${AFUJAR}:${CLASSPATH}"
 
 # return value
-RET=0
-
-# make vars visible to awk
-export WD
-export TMPDIR
+export RET=0
 
 
 # Stage 0: restore old comments (should happen only once)
@@ -154,19 +150,25 @@ mkdir "${TMPDIR}"
     rm -rf "${JAIFDIR}"
     # write out JAIFs from TMPDIR, replacing (bogus) annotation defs
     for f in `(cd "${TMPDIR}" && find * -name '*\.jaif' -print)` ; do
-        # first write out standard annotation defs
         g="${JAIFDIR}/$f"
-        mkdir -p `dirname $g` && cp annotation-defs.jaif "$g"
+        mkdir -p `dirname $g`
+        echo "$g"
 
+        # first write out standard annotation defs
         # then strip out empty annotation defs
         # also generate and insert @AnnotatedFor annotations
-        awk '
-            BEGIN {x=1}                       # initial state: print on
-            /^annotation/ {x=-1}              # omit until class or package
-            /^package/ {x=0;i=0;split("",a)}  # print only if class follows
+        (cat annotation-defs.jaif && awk '
+            # initial state: print on, no class seen yet
+            BEGIN {x=2}
+            # omit until class or package (unless no class seen yet)
+            /^annotation/ {if(x<=1){x=-1}}
+            # hold and print only if class follows (unless no class seen yet)
+            /^package/ {if(x<=1){x=0;i=0;split("",a)}}
+            # print stored lines, note class has been seen (x=1 instead of 2)
             /^class/ {for(j=0;j<i;++j){print a[j]};split("",a);x=1;i=0}
+            # store, print, or drop (depending on x)
             {if(x==0){a[i++]=$0}{if(x>0)print}}
-        ' < "${TMPDIR}/$f" | java -cp ${CP} org.checkerframework.framework.stub.AddAnnotatedFor >> "$g"
+        ' < "${TMPDIR}/$f") | java -cp ${CP} org.checkerframework.framework.stub.AddAnnotatedFor >> "$g"
     done
 )
 
@@ -191,11 +193,11 @@ mkdir "${TMPDIR}"
             fi
         done
     done
-)
 
-[ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
-# copy annotated source files over originals
-rsync -au annotated/* .
-# apply ad-hoc patch to correct miscellaneous errors
-patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
+    [ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
+    # copy annotated source files over originals
+    rsync -au annotated/* .
+    # apply ad-hoc patch to correct miscellaneous errors
+    patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
+)
 
