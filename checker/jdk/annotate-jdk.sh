@@ -141,6 +141,7 @@ splitJAIF() {
                     }
                     printf("%s\n",l)>>out  # current pkg decl
                 }
+                printf("%s\n",l)>>out  # current pkg decl
             }
         }
         /^annotation / { out="" }
@@ -199,7 +200,7 @@ for f in `(cd "${TMPDIR}" && find * -name '*\.jaif' -print)` ; do
     [ ${RET} -ne 0 ] || RET=$?
 done
 
-#[ ${RET} -ne 0 ] && echo "stage 3 failed" 1>&2 && exit ${RET}
+[ ${RET} -ne 0 ] && echo "stage 3 failed" 1>&2 && exit ${RET}
 
 
 # Stage 4: insert annotations from JAIFs into JDK source
