@@ -20,8 +20,7 @@ PRESERVE=1  # option to preserve intermediate files
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
 JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
 WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${HOME}/sandbox/ajdk/jdk"             # annotated JDK
-#AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
+AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
 SRCDIR="${AJDK}/src/share/classes"
 BINDIR="${WORKDIR}/build"
 BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
