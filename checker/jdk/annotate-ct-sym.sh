@@ -20,7 +20,8 @@ PRESERVE=1  # option to preserve intermediate files
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
 JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
 WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
+AJDK="${HOME}/sandbox/bjdk/jdk"             # annotated JDK
+#AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
 SRCDIR="${AJDK}/src/share/classes"
 BINDIR="${WORKDIR}/build"  # TODO: make into parameter, or depend on 7/8
 LT_BIN="${JSR308}/jsr308-langtools/build/classes"
@@ -53,7 +54,8 @@ echo "building JAR"
 
 # unjar ct.sym
 jar xf ${CTSYM}
-cd ${WORKDIR}/sym/META-INF/sym/rt.jar  # yes, it's a directory
+#cd ${WORKDIR}/sym/META-INF/sym/rt.jar  # yes, it's a directory
+(cd ${WORKDIR}/sym/META-INF/sym/rt.jar && rm -rf * && jar xf ${CHECKERFRAMEWORK}/jdk8.jar)
 
 # TODO: implement Java 7 logic, described below but never implemented
 # Explode (Java 7) ct.sym, extract annotations from jdk8.jar, insert

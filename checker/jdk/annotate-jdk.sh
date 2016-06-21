@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# Generates the annotated JDK from old annotation sources (nullness JDK
-# and stubfiles).  The goal is to transfer all the annotations from the
-# sources to the JDK source, which will be the new home for all the
-# annotations associated with the checkers that are distributed with the
-# Checker Framework.
+# Generates the annotated JDK from old annotation sources (lock and
+# nullness JDKs and stubfiles).  The goal is to transfer all the
+# annotations from the sources to the JDK source, which will be the new
+# home for all the annotations associated with the checkers that are
+# distributed with the Checker Framework.
 #
 # Prerequisites:
 #
@@ -47,7 +47,7 @@
 # 2. copy the newly created jdk8.jar to checker/dist; and
 # 3. run "ant tests-nobuildjdk" from Checker Framework's base directory.
 
-export SCRIPTDIR=`cd \`dirname $0\` && pwd`
+export SCRIPTDIR=`dirname \`readlink -m -v $0\``
 export WD="`pwd`"            # run from top directory of jdk8u clone
 export JDK="${WD}/jdk"       # JDK to be annotated
 export TMPDIR="${WD}/tmp"    # directory for temporary files
@@ -167,13 +167,13 @@ fi
  || exit $?
 
 
-# Stage 1: extract JAIFs from nullness JDK
+# Stage 1: extract JAIFs from lock and nullness JDKs
 
 rm -rf "${TMPDIR}"
 mkdir "${TMPDIR}"
 
-(
-    cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/src" || exit 1
+for p in lock nullness ; do
+    cd "${CHECKERFRAMEWORK}/checker/jdk/$p/src" || exit 1
     [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 
     mkdir -p ../build
@@ -182,7 +182,7 @@ mkdir "${TMPDIR}"
     cd ../build || exit 1
 
     for f in `find * -name '*\.class' -print` ; do
-        extract-annotations "$f" 1>&2
+        extract-annotations -b "$f" 1>&2
         [ ${RET} -eq 0 ] && RET=$?
     done
 
@@ -190,7 +190,7 @@ mkdir "${TMPDIR}"
         mkdir -p "${TMPDIR}/`dirname $f`" && mv "$f" "${TMPDIR}/$f"
         [ ${RET} -eq 0 ] && RET=$?
     done
-)
+done
 
 #[ ${RET} -ne 0 ] && echo "stage 1 failed" 1>&2 && exit ${RET}
 echo "stage 1 complete" 1>&2
@@ -198,7 +198,8 @@ echo "stage 1 complete" 1>&2
 
 # Stage 2: convert stub files to JAIFs
 
-convertStubs | splitJAIF
+# sed invocation is temporary workaround for stubfile converter bug
+convertStubs | sed 's/<clinit>:/<clinit>()V/' | splitJAIF
 RET=$?
 #[ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 echo "stage 2 complete" 1>&2
@@ -244,8 +245,8 @@ echo "stage 3 complete" 1>&2
     rsync -au annotated/* .
 
     # apply ad-hoc patch to correct miscellaneous errors
-    if [ -r ${SCRIPTDIR}/ad-hoc.diff ] ; then
-        patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
+    if [ -r ${PATCH} ] ; then
+        patch -p1 < ${PATCH}
     fi
 )
 echo "stage 4 complete" 1>&2
