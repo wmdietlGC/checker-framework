@@ -33,14 +33,6 @@ BOOT=0      # 0 to skip building bootstrap class directory
 trap "exit 0" SIGHUP
 set -o pipefail
 
-# This is called only when all source files successfully compiled.
-# It does the following:
-#  * explodes ct.sym
-#  * for each annotated classfile:
-#     * extracts its annotations
-#     * inserts the annotations into the classfile's counterpart
-#       in the ct.sym class directory
-#  * repackages the resulting classfiles as jdk8.jar.
 finish() {
     echo "success!"
     kill -HUP ${PID}
