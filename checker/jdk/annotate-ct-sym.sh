@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Builds JDK jar for Checker Framework by inserting annotations into
-# ct.sym.
+# Builds JDK jar for Checker Framework by inserting annotations from
+# annotated JDK class files into ct.sym.
 
 # ensure CHECKERFRAMEWORK set
 if [ -z "$CHECKERFRAMEWORK" ] ; then
@@ -55,7 +55,8 @@ echo "building JAR"
 # unjar ct.sym
 jar xf ${CTSYM}
 #cd ${WORKDIR}/sym/META-INF/sym/rt.jar  # yes, it's a directory
-(cd ${WORKDIR}/sym/META-INF/sym/rt.jar && rm -rf * && jar xf ${CHECKERFRAMEWORK}/jdk8.jar)
+(cd ${WORKDIR}/sym/META-INF/sym/rt.jar && rsync -a ${BINDIR}/* .)
+#(cd ${WORKDIR}/sym/META-INF/sym/rt.jar && rm -rf * && jar xf ${CHECKERFRAMEWORK}/jdk8.jar)
 
 # TODO: implement Java 7 logic, described below but never implemented
 # Explode (Java 7) ct.sym, extract annotations from jdk8.jar, insert

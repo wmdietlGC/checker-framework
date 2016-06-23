@@ -1,9 +1,13 @@
 #!/bin/sh
 
+# Utility that takes Java source file with methods stubbed/commented
+# out and creates and compiles variants with one method restored in
+# each.  Useful for finding method that makes a processor crash.
+
 set -o pipefail
 
 [ $# -ne 1 ] && echo "usage: `basename $0` sourcefile.java" && exit 1
-[ -z "${CHECKERFRAMEWORK}" ] && echo "CHECKERFRAMEWORK not set" && exit 1
+[ ! -z "${CHECKERFRAMEWORK}" ] || (echo "CHECKERFRAMEWORK not set" && exit 1)
 
 # annotated-jdk8u-jdk should be Checker Framework sibling
 JSR308=`(cd "${CHECKERFRAMEWORK}/.." && pwd)`
