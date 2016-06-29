@@ -83,6 +83,10 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
       "\\bimport *+((?:[^.]*+[.] *+)*+[^ ]*) *+;",
       Pattern.DOTALL);
 
+  /**
+   * Package name that is active at the current point in the input file.
+   * Changes as package declarations are encountered.
+   */
   private final String pkgName;
   private final List<String> imports;
   private final AScene scene;
