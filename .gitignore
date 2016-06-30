@@ -33,6 +33,7 @@ dist
 stubparser/docs/api
 # Don't want to ignore .jar files in checker/lib/
 # *.jar
+checker/jdk/log
 checker/jdk/jdk*.jar
 checker/jdk/**/*.class
 *.pyc
