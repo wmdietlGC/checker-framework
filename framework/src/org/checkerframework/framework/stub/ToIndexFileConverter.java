@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -82,8 +81,6 @@ import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntry;
  */
 public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> {
   // The possessive modifiers "*+" are for efficiency only.
-  private static Pattern packagePattern = Pattern.compile(
-      "\\bpackage *+((?:[^.]*+[.] *+)*+[^ ]*) *+;");
   private static Pattern importPattern = Pattern.compile(
       "\\bimport *+((?:[^.]*+[.] *+)*+[^ ]*) *+;");
 
@@ -108,16 +105,7 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
   public ToIndexFileConverter(PackageDeclaration pkgDecl,
       List<ImportDeclaration> importDecls, AScene scene) {
     this.scene = scene;
-    // TODO: It would be cleaner to obtain the package name directly from
-    // pkgDecl rather than via formatting to a string and then parsing it
-    // via regexps.  Is there any reason the latter is preferable?
-    if (pkgDecl == null) {
-      pkgName = "";
-    } else {
-      Matcher m = packagePattern.matcher(pkgDecl.toString());
-      String s = m.find() ? m.group(1) : null;
-      pkgName = s == null ? "" : s;
-    }
+    pkgName = pkgDecl == null ? "" : pkgDecl.getName().getName();
     if (importDecls == null) {
       imports = Collections.emptyList();
     } else {
@@ -145,7 +133,6 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
    * @param args name of JAIF with annotation definition, followed by
    * names of stub files to be converted (if none given, program reads
    * from standard input)
-   * @throws IOException
    */
   public static void main(String[] args) {
     if (args.length < 1) {
@@ -270,6 +257,9 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
     StringBuilder sb = new StringBuilder("<init>(");
     AClass clazz = (AClass) elem;
     AMethod method;
+
+    // Some of the methods in the generated parser use null to represent
+    // an empty list.
     if (params != null) {
       for (Parameter param : params) {
         Type ptype = param.getType();
@@ -279,7 +269,6 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
     sb.append(")V");
     method = clazz.methods.vivify(sb.toString());
     visitDecl(decl, method);
-    // TODO: document how params can be null, or remove the test
     if (params != null) {
       for (int i = 0; i < params.size(); i++) {
         Parameter param = params.get(i);
@@ -549,7 +538,7 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
         String typeName = type.getName();
         String name = resolve(typeName);
         if (name == null) {
-          // TODO: why is this not an error?
+          // could be defined in the same stub file
           return "L" + typeName + ";";
         }
         return "L" + PluginUtil.join("/", name.split("\\.")) + ";";
@@ -597,7 +586,7 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
 
       @Override
       public String visit(WildcardType type, Void v) {
-        return "Ljava/lang/Object;";
+        return type.getSuper().accept(this, null);
       }
     }, null);
   }
