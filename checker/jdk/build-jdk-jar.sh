@@ -1,40 +1,65 @@
 #!/bin/sh
 
+# Builds annotated JDK JAR for the Checker Framework:
+
 # Builds JDK 8 jar for Checker Framework by compiling annotated JDK
 # source, extracting annotations, and inserting extracted annotations
 # into ${JAVA_HOME}/lib/ct.sym.
 
-# ensure CHECKERFRAMEWORK set
-[ ! -z "$CHECKERFRAMEWORK" ] || export CHECKERFRAMEWORK=`(cd "$0/../.." && pwd)`
+# Builds JDK 7 jar for Checker Framework by inserting annotations from
+# JDK 8 into ct.sym.
 
-# Debugging
-PRESERVE=1  # option to preserve intermediate files
+trap "exit 1" QUIT
+export PID=$$
+
+usage() {
+    echo "usage: java $0 [7|8]"
+    kill -s QUIT ${PID}
+}
+
+if [ $# -eq 1 ] ; then
+    case $# in
+        0) JARNAME="8";;
+        1) ([ $1=="7" -o $1=="8" ] || usage) && JARNAME="$1";;
+        *) usage;;
+    esac
+fi
+export JARNAME="jdk${JARNAME}.jar"
+
+# ensure CHECKERFRAMEWORK set
+[ ! -z "$CHECKERFRAMEWORK" ] ||\
+ echo "CHECKERFRAMEWORK not set; exiting" && exit 1)
 
 # parameters derived from environment
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
-JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
-WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
-SRCDIR="${AJDK}/src/share/classes"
-BINDIR="${WORKDIR}/build"
-BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
-TOOLSJAR="${JAVA_HOME}/lib/tools.jar"
-LT_BIN="${JSR308}/jsr308-langtools/build/classes"
-LT_JAVAC="${JSR308}/jsr308-langtools/dist/bin/javac"
-CF_BIN="${CHECKERFRAMEWORK}/checker/build"
-CF_DIST="${CHECKERFRAMEWORK}/checker/dist"
-CF_JAR="${CF_DIST}/checker.jar"
-CF_JAVAC="java -Xmx512m -jar ${CF_JAR} -Xbootclasspath/p:${BOOTDIR}"
-CP="${BINDIR}:${BOOTDIR}:${LT_BIN}:${TOOLSJAR}:${CF_BIN}:${CF_JAR}"
-JFLAGS="-XDignore.symbol.file=true -Xmaxerrs 20000 -Xmaxwarns 20000\
+export JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
+export WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
+export AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
+export SRCDIR="${AJDK}/src/share/classes"
+export BINDIR="${WORKDIR}/build"
+export BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
+export TOOLSJAR="${JAVA_HOME}/lib/tools.jar"
+export LT_BIN="${JSR308}/jsr308-langtools/build/classes"
+export LT_JAVAC="${JSR308}/jsr308-langtools/dist/bin/javac"
+export CF_BIN="${CHECKERFRAMEWORK}/checker/build"
+export CF_DIST="${CHECKERFRAMEWORK}/checker/dist"
+export CF_JAR="${CF_DIST}/checker.jar"
+export CF_JAVAC="java -Xmx512m -jar ${CF_JAR} -Xbootclasspath/p:${BOOTDIR}"
+export CP="${BINDIR}:${BOOTDIR}:${LT_BIN}:${TOOLSJAR}:${CF_BIN}:${CF_JAR}"
+export JFLAGS="-XDignore.symbol.file=true -Xmaxerrs 20000 -Xmaxwarns 20000\
  -source 8 -target 8 -encoding ascii -cp ${CP}"
-PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,linear,lock,nullness,signature,units,unsignedness"
-PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=bytecode,source -AprintErrorStack -Awarns"
-JAIFDIR="${WORKDIR}/jaifs"
-SYMDIR="${WORKDIR}/sym"
+export PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,nullness,signature"
+export PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=source\
+ -AprintErrorStack -Awarns"
+export JAIFDIR="${WORKDIR}/jaifs"
+export SYMDIR="${WORKDIR}/sym"
 
 set -o pipefail
 
+if [ ${JARNAME}="jdk7.jar" ] ; then
+# if present, JAVA_7_HOME overrides JAVA_HOME
+[ -z "${JAVA_7_HOME}" ] || CTSYM="${JAVA_7_HOME}/lib/ct.sym"
+else
 rm -rf ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 cd ${SRCDIR}
@@ -58,7 +83,7 @@ echo "build bootstrap JDK"
 find ${SI_DIRS} ${DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
  ${LT_JAVAC} -g -d ${BOOTDIR} ${JFLAGS} -source 8 -target 8 -encoding ascii\
  -cp ${CP} | tee ${WORKDIR}/log/0.log
-[ $? -ne 0 ] && exit 1
+[ $? -eq 0 ] || return 1
 grep -q 'not found' ${WORKDIR}/log/0.log
 (cd ${BOOTDIR} && jar cf ../jdk.jar *)
 
@@ -68,7 +93,7 @@ echo "build internal and security packages"
 find ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
  ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
  | tee ${WORKDIR}/log/1.log
-[ $? -ne 0 ] && exit 1
+[ $? -eq 0 ] || return 1
 
 # Build the remaining packages one at a time because building all of
 # them together makes the compiler run out of memory.
@@ -87,12 +112,17 @@ if [ $? -ne 0 ] ; then
     echo "failed" | tee ${WORKDIR}/log/2.log
     cat ${WORKDIR}/log/* | grep -l 'Compilation unit: ' | awk '{print$3}'\
  | sort -u | tee -a ${WORKDIR}/log/2.log
-    exit 1
+    return 1
 fi
+fi
+
+# Explode ct.sym, extract annotations from JDK 8, insert extracted
+# annotations into ct.sym classfiles, and repackage newly annotated
+# classfiles as jdkX.jar.
 
 # construct annotated ct.sym
 bash ${WORKDIR}/annotate-ct-sym.sh |& tee ${WORKDIR}/log/2.log
 
 cd ${WORKDIR}
-cp jdk.jar ${CF_DIST}/jdk8.jar
+cp jdk.jar ${CF_DIST}/${JARNAME}
 [ ${PRESERVE} -eq 0 ] || rm -rf sym
