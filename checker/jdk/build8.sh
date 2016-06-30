@@ -5,7 +5,7 @@
 # into ${JAVA_HOME}/lib/ct.sym.
 
 # Optionally pass package directories as cmdline arguments (relative to
-# $AJDK/src/share/classes)
+# $AJDK/src/share/classes).
 
 # This can be run from any directory, but annotated-jdk8u-jdk must be a
 # sibling of checker-framework.
