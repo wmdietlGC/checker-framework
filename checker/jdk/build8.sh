@@ -43,6 +43,7 @@ echo "JSR308: ${JSR308}"
 echo "AJDK: ${AJDK}"
 
 set -o pipefail
+cd ${SRCDIR}
 
 if [ $# -ne 0 ] ; then
 echo "DIRS is empty"
@@ -89,7 +90,6 @@ fi				# end of test: if [ $# -ne 0 ]
 # them together makes the compiler run out of memory.
 echo "build one package at a time w/processors on"
 for d in ${DIRS} ; do
-    cd ${SRCDIR}
     ls $d/*.java 2>/dev/null || continue
     echo :$d: `echo $d/*.java | wc -w` files
     ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
