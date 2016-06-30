@@ -4,6 +4,12 @@
 # source, extracting annotations, and inserting extracted annotations
 # into ${JAVA_HOME}/lib/ct.sym.
 
+# Optionally pass package directories as cmdline arguments (relative to
+# $AJDK/src/share/classes).
+
+# This can be run from any directory, but annotated-jdk8u-jdk must be a
+# sibling of checker-framework.
+
 # ensure CHECKERFRAMEWORK set
 [ ! -z "$CHECKERFRAMEWORK" ] || export CHECKERFRAMEWORK=`(cd "$0/../.." && pwd)`
 
@@ -14,7 +20,7 @@ PRESERVE=1  # option to preserve intermediate files
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
 JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
 WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
+AJDK="${JSR308}/annotated-jdk8u-jdk"	    # annotated JDK
 SRCDIR="${AJDK}/src/share/classes"
 BINDIR="${WORKDIR}/build"
 BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
@@ -33,11 +39,20 @@ PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=bytecode,sou
 JAIFDIR="${WORKDIR}/jaifs"
 SYMDIR="${WORKDIR}/sym"
 
-set -o pipefail
+echo "JSR308: ${JSR308}"
+echo "AJDK: ${AJDK}"
 
+set -o pipefail
+cd ${SRCDIR}
+
+if [ $# -ne 0 ] ; then
+echo "DIRS is non-empty; skipping building the bootstrap JDK"
+DIRS=$*
+mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
+else
+echo "DIRS is empty"
 rm -rf ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
-cd ${SRCDIR}
 
 DIRS=`find com java javax jdk org sun \( -name META_INF -o -name dc\
  -o -name example -o -name jconsole -o -name pept -o -name snmp\
@@ -69,6 +84,7 @@ find ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
  ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
  | tee ${WORKDIR}/log/1.log
 [ $? -ne 0 ] && exit 1
+fi				# end of test: if [ $# -ne 0 ]
 
 # Build the remaining packages one at a time because building all of
 # them together makes the compiler run out of memory.
@@ -76,7 +92,10 @@ echo "build one package at a time w/processors on"
 for d in ${DIRS} ; do
     ls $d/*.java 2>/dev/null || continue
     echo :$d: `echo $d/*.java | wc -w` files
-    ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
+    # following two lines work around nullness checker bug (Issue #810)
+    PROCS=${PROCESSORS}
+    [ ! $d="javax/imageio/spi" ] || PROCS="fenum,formatter,guieffect,i18n,i18nformatter,interning,linear,lock,signature,signedness,units"
+    ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCS} ${PFLAGS}\
  "$d"/*.java 2>&1 | tee ${WORKDIR}/log/`echo "$d" | tr / .`.log
 done
 
