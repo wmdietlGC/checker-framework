@@ -46,11 +46,11 @@ set -o pipefail
 cd ${SRCDIR}
 
 if [ $# -ne 0 ] ; then
-echo "DIRS is empty"
+echo "DIRS is non-empty; skipping building the bootstrap JDK"
 DIRS=$*
 mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 else
-echo "DIRS is non-empty"
+echo "DIRS is empty"
 rm -rf ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 
