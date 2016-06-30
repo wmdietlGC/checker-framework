@@ -33,11 +33,6 @@ BOOT=0      # 0 to skip building bootstrap class directory
 trap "exit 0" SIGHUP
 set -o pipefail
 
-finish() {
-    echo "success!"
-    kill -HUP ${PID}
-}
-
 if [ ${BOOT} -ne 0 ] ; then
     rm -rf ${BOOTDIR} ${BINDIR}
     mkdir -p ${BOOTDIR} ${BINDIR}
@@ -74,7 +69,7 @@ done
 
 AGENDA=`grep 'Compilation unit: ' ${WORKDIR}/LOG | awk '{print$3}' | sort -u`
 if [ -z "${AGENDA}" ] ; then
-    finish | tee -a ${WORKDIR}/LOG
+    echo "success!" | tee -a ${WORKDIR}/LOG
     [ $? -eq 0 ] && exit 0
 fi
 
