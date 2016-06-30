@@ -17,7 +17,7 @@ PRESERVE=1  # option to preserve intermediate files
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
 JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
 WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${JSR308}/annotated-jdk8u-jdk/jdk"    # annotated JDK
+AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
 SRCDIR="${AJDK}/src/share/classes"
 BINDIR="${WORKDIR}/build"
 BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
@@ -37,6 +37,7 @@ JAIFDIR="${WORKDIR}/jaifs"
 SYMDIR="${WORKDIR}/sym"
 
 set -o pipefail
+cd ${SRCDIR}
 
 if [ $# -ne 0 ] ; then
 DIRS=$*
@@ -81,7 +82,6 @@ fi
 # them together makes the compiler run out of memory.
 echo "build one package at a time w/processors on"
 for d in ${DIRS} ; do
-    cd ${SRCDIR}
     ls $d/*.java 2>/dev/null || continue
     echo :$d: `echo $d/*.java | wc -w` files
     ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
