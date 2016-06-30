@@ -596,7 +596,7 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
    *
    * @param className possibly unqualified name of class
    * @return fully qualified name of class that {@code className}
-   * identifies in the current context
+   * identifies in the current context, or null if resolution fails
    */
   private String resolve(String className) {
     String qualifiedName;
@@ -606,6 +606,8 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
       qualifiedName = className;
       resolved = loadClass(qualifiedName);
       if (resolved == null) {
+        // Every Java program implicitly does "import java.lang.*",
+        // so see whether this class is in that package.
         qualifiedName = "java.lang." + className;
         resolved = loadClass(qualifiedName);
       }
@@ -613,12 +615,8 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
       qualifiedName = pkgName + "." + className;
       resolved = loadClass(qualifiedName);
       if (resolved == null) {
-        qualifiedName = "java.lang." + className;
+        qualifiedName = className;
         resolved = loadClass(qualifiedName);
-        if (resolved == null) {
-          qualifiedName = className;
-          resolved = loadClass(qualifiedName);
-        }
       }
     }
 
@@ -671,9 +669,7 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
    * none found
    */
   private static Class<?> loadClass(String className) {
-    if (className == null) {
-      return null;
-    }
+    assert className != null;
     try {
       return Class.forName(className, false, null);
     } catch (ClassNotFoundException e) {

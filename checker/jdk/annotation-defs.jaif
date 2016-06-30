@@ -567,16 +567,16 @@ annotation @RegexBottom: @Target({ ElementType.TYPE_USE, ElementType.TYPE_PARAME
 package org.checkerframework.checker.regex.classic.qual:
 annotation @UnknownRegex: @Target({ ElementType.TYPE_USE, ElementType.TYPE_PARAMETER })
 
-package org.checkerframework.checker.unsignedness.qual:
+package org.checkerframework.checker.signedness.qual:
 annotation @Constant: @Retention(RetentionPolicy.RUNTIME) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 
-package org.checkerframework.checker.unsignedness.qual:
+package org.checkerframework.checker.signedness.qual:
 annotation @Signed: @Retention(RetentionPolicy.RUNTIME) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 
-package org.checkerframework.checker.unsignedness.qual:
+package org.checkerframework.checker.signedness.qual:
 annotation @Unknownsignedness: @Retention(RetentionPolicy.RUNTIME) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 
-package org.checkerframework.checker.unsignedness.qual:
+package org.checkerframework.checker.signedness.qual:
 annotation @Unsigned: @Retention(RetentionPolicy.RUNTIME) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 
 package org.checkerframework.dataflow.qual:
