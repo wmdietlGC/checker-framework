@@ -322,7 +322,7 @@ public class BasicHTML {
      public static final @Interned String documentBaseKey = "html.base";
 }
 package javax.swing.plaf.basic;
-public class BasicRootPaneUI$ Actions {
+public class BasicRootPaneUI$Actions {
     public static final @Interned String PRESS = "press";
     public static final @Interned String RELEASE = "release";
     public static final @Interned String POST_POPUP = "postPopup";
