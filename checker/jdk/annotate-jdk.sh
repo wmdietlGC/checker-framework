@@ -233,16 +233,17 @@ rm -rf "${JAIFDIR}"
 #    which makes up empty definitions.
 #  * Add @AnnotatedFor annotations.
 for f in `(cd "${TMPDIR}" && find * -name '*\.jaif' -print)` ; do
+    RET=0
     g="${JAIFDIR}/$f"
     mkdir -p `dirname $g`
     echo "$g" 1>&2
-    cp "${ADEFS}" "$g"
 
     # First write out standard annotation defs,
     # then strip out empty annotation defs from $f.
     # Also generate and insert @AnnotatedFor annotations.
     (cat "${ADEFS}" && stripDefs < "${TMPDIR}/$f") | addAnnotatedFor > "$g"
-    [ ${RET} -ne 0 ] || RET=$?
+    RET=$?
+    [ ${RET} -eq 0 ] || echo "phase 3 error (${RET}): $f"
 done
 
 # FIXME: following line commented out until nonzero exit code eliminated
