@@ -92,7 +92,10 @@ echo "build one package at a time w/processors on"
 for d in ${DIRS} ; do
     ls $d/*.java 2>/dev/null || continue
     echo :$d: `echo $d/*.java | wc -w` files
-    ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
+    # following two lines work around nullness checker bug (Issue #810)
+    PROCS=${PROCESSORS}
+    [ ! $d="javax/imageio/spi" ] || PROCS="fenum,formatter,guieffect,i18n,i18nformatter,interning,linear,lock,signature,signedness,units"
+    ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCS} ${PFLAGS}\
  "$d"/*.java 2>&1 | tee ${WORKDIR}/log/`echo "$d" | tr / .`.log
 done
 
