@@ -1374,23 +1374,50 @@ So, use our own archived version.
 
     </target>
 
-    <target name="jdk.jar" depends="jar"
+    <target name="jdk.jar" depends="jar, -jdk.is8, -jdk.8, -jdk.other"
+            description="Download the instrumented jdkX.jar of the JDK version specified by JAVA_HOME">
+    </target>
+
+    <target name="-jdk.is8">
+        <condition property="is8">
+            <equals arg1="${jdkName}" arg2="jdk8.jar" trim="true"/>
+        </condition>
+    </target>
+
+    <target name="-jdk.8">
+        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar" dest="dist/jdk8.jar" skipexisting="true"/>
+        <copy file="dist/jdk8.jar" tofile="jdk/jdk8.jar"/>
+    </target>
+
+    <target name="-jdk.other" unless="is8">
+        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk7.jar" dest="dist/jdk7.jar" skipexisting="true"/>
+    </target>
+
+    <target name="build-jdk" depends="jar, -jdk.is8, -build-jdk.8, -build-jdk.other"
             description="Create the instrumented jdkX.jar using the JDK specified by JAVA_HOME">
+    </target>
+
+    <target name="-build-jdk.8">
       <property name="annotation-file-utilities.jar" value="${annotation.tools}/annotation-file-utilities/annotation-file-utilities.jar"/>
       <available property="annotation-file-utilities.exist" file="${annotation-file-utilities.jar}" />
       <fail unless="annotation-file-utilities.exist" message="Could not find annotation-file-utilities.jar: ${annotation-file-utilities.jar}.  You must build Annotation Tools; see http://types.cs.washington.edu/checker-framework/current/checker-framework-manual.html#build-source" />
 
-      <exec executable="make" failonerror="true">
-         <arg value="LANGTOOLS=${jsr308.langtools}"/>
-         <arg value="LANGTOOLSDIST=${jsr308.langtools.dist}"/>
-         <arg value="ANNOTATION_TOOLS=${annotation.tools}"/>
-         <arg value="CLASSPATH=${basedir}/${build}"/>
-         <arg value="-C"/>
-         <arg value="jdk"/>
+      <exec executable="bash" failonerror="true">
+         <arg value="jdk/build8.sh"/>
          <env key="LT_BIN" value="${LT_BIN}"/>
       </exec>
-      <move file="jdk/jdk.jar" tofile="jdk/${jdkName}"/>
+      <!-- <move file="jdk/jdk.jar" tofile="jdk/${jdkName}"/> -->
+    </target>
 
+    <target name="-build-jdk.other" unless="is8">
+      <property name="afu.jar" value="${annotation.tools}/annotation-file-utilities/annotation-file-utilities.jar"/>
+      <available property="afu.exist" file="${afu.jar}" />
+      <fail unless="afu.exist" message="Could not find annotation-file-utilities.jar: ${afu.jar}.  You must build Annotation Tools; see http://types.cs.washington.edu/checker-framework/current/checker-framework-manual.html#build-source" />
+
+      <exec executable="bash" failonerror="true">
+         <arg value="jdk/build7.sh"/>
+         <env key="LT_BIN" value="${LT_BIN}"/>
+      </exec>
     </target>
 
     <target name="dist-release" depends="clean, dist-all, all-tests-nojtreg-nobuild, javadoc.jar, sources.jar"
