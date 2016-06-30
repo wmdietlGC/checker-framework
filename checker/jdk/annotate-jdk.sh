@@ -26,10 +26,14 @@
 #     The first time you do so, edit this script to change "COMMENTS=0"
 #     to "COMMENTS=1", then edit the script to set it back afterward.
 #     .../checker-framework/checker/jdk/annotate-jdk.sh
+#     Apply additional diffs:
+#     cd $t/libraries/annotated-jdk8u-jdk
+#     patch -p7 < $cf/checker/jdk/commentouts.diff
 #
 # 4.  Compile the annotated JDK 8 source; this takes about 9 hours.
-#     [Will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh]
-#     [Currently is: .../checker-framework/checker/jdk/build8.sh]
+#     cd $t/libraries/annotated-jdk8u-jdk
+#     sh -v $cf/checker/jdk/build8.sh
+#     [Will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh but that is untested.  build7.sh isn't tested either.]
 #     (It may be necessary to edit some of the variable settings in the
 #     script.)  If successful, this will replace checker/dist/jdk8.jar
 #     with a .jar file containing annotations from the annotated JDK source.

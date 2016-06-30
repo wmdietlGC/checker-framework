@@ -1,7 +1,9 @@
 #!/bin/sh
 
-# runs jaidiff.sh ("set difference" for JAIFs) on parallel directory trees
-# input directories currently fixed as jdiff/a and jdiff/b, output as jdiff/d
+# Computes "set difference" for annotations on two directories of .class files.
+# The input directories currently fixed as jdiff/a and jdiff/b, output as jdiff/d.
+# Internall, it extracts .jaif files from the .class files, then runs 
+# jaidiff.sh (set difference for JAIFs) the parallel directory trees.
 
 # parameters derived from environment
 # TOOLSJAR derived from JAVA_HOME, rest from CHECKERFRAMEWORK
@@ -16,7 +18,7 @@ CF_BIN="${JSR308}/checker-framework/checker/build"
 CP="${LT_BIN}:${TOOLSJAR}:${AFUJAR}:${CLASSPATH}:${CF_BIN}"
 
 # find classfiles referring to checkerframework and thus presumably annotated
-classfiles() {
+annotated_classfiles() {
     for f in `find * -name '*\.class' -print` ; do
         strings "$f" | grep -q checkerframework
         [ $? -eq 0 ] && echo "$f"
@@ -30,7 +32,7 @@ extract() {
     cd "$1" || return 1
     [ -z "*" ] && echo "empty input directory $1" && return 1
     find * -name '*\.jaif' -delete
-    for f in `classfiles` ; do
+    for f in `annotated_classfiles` ; do
         D="`dirname $f`"
         B="`basename $f .class`"
         CLASSPATH=${CP} ${AFU}/scripts/extract-annotations "$f"
