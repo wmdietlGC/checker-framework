@@ -327,7 +327,7 @@ public class BasicRootPaneUI {
          public static final @Interned String PRESS = "press";
          public static final @Interned String RELEASE = "release";
          public static final @Interned String POST_POPUP = "postPopup";
-    };
+    }
 }
 package javax.swing.plaf.basic;
 public class BasicSliderUI {
