@@ -4,6 +4,8 @@
 # source, extracting annotations, and inserting extracted annotations
 # into ${JAVA_HOME}/lib/ct.sym.
 
+# Optionally pass package directories as cmdline arguments
+
 # ensure CHECKERFRAMEWORK set
 [ ! -z "$CHECKERFRAMEWORK" ] || export CHECKERFRAMEWORK=`(cd "$0/../.." && pwd)`
 
@@ -14,7 +16,8 @@ PRESERVE=1  # option to preserve intermediate files
 # TOOLSJAR and CTSYM derived from JAVA_HOME, rest from CHECKERFRAMEWORK
 JSR308="`cd $CHECKERFRAMEWORK/.. && pwd`"   # base directory
 WORKDIR="${CHECKERFRAMEWORK}/checker/jdk"   # working directory
-AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
+AJDK="${HOME}/sandbox/bjdk/jdk"             # annotated JDK
+#AJDK="${JSR308}/annotated-jdk8u-jdk"        # annotated JDK
 SRCDIR="${AJDK}/src/share/classes"
 BINDIR="${WORKDIR}/build"
 BOOTDIR="${WORKDIR}/bootstrap"              # initial build w/o processors
@@ -35,9 +38,10 @@ SYMDIR="${WORKDIR}/sym"
 
 set -o pipefail
 
+DIRS=$*
+if [ -z "$DIRS" ] ; then
 rm -rf ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
 mkdir -p ${BOOTDIR} ${BINDIR} ${WORKDIR}/log
-cd ${SRCDIR}
 
 DIRS=`find com java javax jdk org sun \( -name META_INF -o -name dc\
  -o -name example -o -name jconsole -o -name pept -o -name snmp\
@@ -69,6 +73,7 @@ find ${SI_DIRS} -maxdepth 1 -name '*\.java' -print | xargs\
  ${CF_JAVAC} -g -d ${BINDIR} ${JFLAGS} -processor ${PROCESSORS} ${PFLAGS}\
  | tee ${WORKDIR}/log/1.log
 [ $? -ne 0 ] && exit 1
+fi
 
 # Build the remaining packages one at a time because building all of
 # them together makes the compiler run out of memory.
