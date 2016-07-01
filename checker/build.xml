@@ -47,9 +47,6 @@
     </condition>
 
 
-    <!-- Used to have:
-           depends="touch-jdk"
-         When is that truly necessary? -->
     <target name="prep" depends="prep-all"
             description="Create required directories">
         <mkdir dir="${build}"/>
@@ -1322,19 +1319,6 @@ So, use our own archived version.
               <pathelement location="${errorprone.lib}"/>
             </compilerclasspath>
         </javac>
-    </target>
-
-
-    <!-- This throws off dependency tracking and causes rebuilding.
-         When is it truly necessary? -->
-    <!-- Why all JDK files?  Why not just source files? -->
-    <target name="touch-jdk"
-            description="Update the date of all jdk files">
-        <touch>
-            <fileset dir="jdk">
-                <include name="**/*"/>
-            </fileset>
-        </touch>
     </target>
 
     <!--
