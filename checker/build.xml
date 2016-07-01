@@ -1385,12 +1385,12 @@ So, use our own archived version.
     </target>
 
     <target name="-jdk.8">
-        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar" dest="dist/jdk8.jar" skipexisting="true"/>
+        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk8.jar" dest="dist/jdk8.jar" usetimestamp="true"/>
         <copy file="dist/jdk8.jar" tofile="jdk/jdk8.jar"/>
     </target>
 
     <target name="-jdk.other" unless="is8">
-        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk7.jar" dest="dist/jdk7.jar" skipexisting="true"/>
+        <get src="https://types.cs.washington.edu/checker-framework/annotated-jdk-jars/jdk7.jar" dest="dist/jdk7.jar" usetimestamp="true"/>
     </target>
 
     <target name="build-jdk" depends="jar, -jdk.is8, -build-jdk.8, -build-jdk.other"
