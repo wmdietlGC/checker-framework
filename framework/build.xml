@@ -215,7 +215,6 @@
                  encoding="UTF-8"
                  additionalParam="-Xdoclint:all,-missing"
                  failonerror="true"
-                 failonwarning="true"
                  executable="${javadoc.bin}"
                  classpath="${build}:${javacutil.lib}:${dataflow.lib}:${stubparser.lib}:${javac.lib}:${javadoc.lib}:${junit.lib}:${hamcrest.lib}:${annotation-file-utilities.lib}"
                  excludepackagenames="org.checkerframework.framework.stub"

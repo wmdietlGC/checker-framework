@@ -132,7 +132,6 @@
                  encoding="UTF-8"
                  additionalParam="-Xdoclint:all,-missing"
                  failonerror="true"
-                 failonwarning="true"
                  executable="${javadoc.bin}"
                  classpath="${build}:${javac.lib}:${javadoc.lib}:${java.home}/../lib/tools.jar"
                  bootclasspath="${javac.lib}:${javadoc.lib}:${java.home}/lib/rt.jar">
