@@ -145,14 +145,6 @@ public class StubParser {
     public StubParser(String filename, InputStream inputStream,
             AnnotatedTypeFactory factory, ProcessingEnvironment env) {
         this.filename = filename;
-        IndexUnit parsedindex;
-        try {
-            parsedindex = JavaParser.parse(inputStream);
-        } catch (Exception e) {
-            ErrorReporter.errorAbort("StubParser: exception from JavaParser.parse for file " + filename, e);
-            parsedindex = null; // dead code, but needed for def. assignment checks
-        }
-        this.index = parsedindex;
         this.atypeFactory = factory;
         this.processingEnv = env;
         this.elements = env.getElementUtils();
@@ -164,10 +156,22 @@ public class StubParser {
         this.warnIfStubOverwritesBytecode= options.containsKey("stubWarnIfOverwritesBytecode");
         this.debugStubParser = options.containsKey("stubDebug");
 
+        if (debugStubParser) {
+            stubDebug(String.format("parsing stub file %s%n", filename));
+        }
+        IndexUnit parsedindex;
+        try {
+            parsedindex = JavaParser.parse(inputStream);
+        } catch (Exception e) {
+            ErrorReporter.errorAbort("StubParser: exception from JavaParser.parse for file " + filename, e);
+            parsedindex = null; // dead code, but needed for def. assignment checks
+        }
+        this.index = parsedindex;
+
         // getSupportedAnnotations also sets imports. This should be refactored to be nicer.
         supportedAnnotations = getSupportedAnnotations();
         if (supportedAnnotations.isEmpty()) {
-            stubWarnIfNotFound("No supported annotations found! This likely means your stub file doesn't import them correctly.");
+            stubWarnIfNotFound(String.format("No supported annotations found! This likely means stub file %s doesn't import them correctly.", filename));
         }
         faexprcache = new HashMap<FieldAccessExpr, VariableElement>();
         nexprcache = new HashMap<NameExpr, VariableElement>();
@@ -360,21 +364,22 @@ public class StubParser {
         // couldn't find type.  not in class path
         if (typeElt == null) {
             boolean warn = true;
-            if (typeDecl.getAnnotations() != null) {
-                for (AnnotationExpr anno : typeDecl.getAnnotations()) {
-                    if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
-                        warn = false;
+            if (! debugStubParser) {
+                if (typeDecl.getAnnotations() != null) {
+                    for (AnnotationExpr anno : typeDecl.getAnnotations()) {
+                        if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
+                            warn = false;
+                        }
+                    }
+                }
+                if (packageAnnos != null) {
+                    for (AnnotationExpr anno : packageAnnos) {
+                        if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
+                            warn = false;
+                        }
                     }
                 }
             }
-            if (packageAnnos != null) {
-                for (AnnotationExpr anno : packageAnnos) {
-                    if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
-                        warn = false;
-                    }
-                }
-            }
-            warn = warn || debugStubParser;
             if (warn) {
                 stubWarnIfNotFound("Type not found: " + typeName);
             }
