@@ -1,0 +1,19 @@
+import org.checkerframework.checker.guieffect.qual.*;
+
+@UIPackage
+package java.awt;
+
+@UIPackage
+package java.awt.event;
+
+@UIPackage
+package java.awt.dnd;
+
+@UIPackage
+package javax.swing;
+
+@UIPackage
+package javax.swing.text;
+
+@UIPackage
+package javax.swing.event;
