@@ -32,7 +32,7 @@
 #
 # 4.  Compile the annotated JDK 8 source; this takes about 9 hours.
 #     cd $t/libraries/annotated-jdk8u-jdk
-#     sh -v $cf/checker/jdk/build8.sh
+#     $cf/checker/jdk/build8.sh
 #     [Will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh but that is untested.  build7.sh isn't tested either.]
 #     (It may be necessary to edit some of the variable settings in the
 #     script.)  If successful, this will replace checker/dist/jdk8.jar

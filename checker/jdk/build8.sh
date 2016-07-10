@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+# bash rather than sh because of use of "set -o pipefail".
 
 # Builds JDK 8 jar for Checker Framework by compiling annotated JDK
 # source, extracting annotations, and inserting extracted annotations
@@ -10,7 +11,9 @@
 # This can be run from any directory, but annotated-jdk8u-jdk must be a
 # sibling of checker-framework.
 
-# ensure CHECKERFRAMEWORK set
+set -v
+
+# Ensure CHECKERFRAMEWORK is set.
 [ ! -z "$CHECKERFRAMEWORK" ] || export CHECKERFRAMEWORK=`(cd "$0/../.." && pwd)`
 
 # Debugging
@@ -42,7 +45,9 @@ SYMDIR="${WORKDIR}/sym"
 echo "JSR308: ${JSR308}"
 echo "AJDK: ${AJDK}"
 
-set -o pipefail
+if [ -n "$BASH" ]; then
+    set -o pipefail
+fi
 cd ${SRCDIR}
 
 if [ $# -ne 0 ] ; then
