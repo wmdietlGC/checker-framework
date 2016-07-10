@@ -2631,6 +2631,10 @@ public class AnnotatedTypeFactory implements AnnotationProvider {
             if (in != null) {
                 StubParser stubParser = new StubParser("jdk.astub", in, this, processingEnv);
                 stubParser.parse(typesFromStubFiles, declAnnosFromStubFiles);
+            } else {
+                if (checker.hasOption("stubDebug")) {
+                    checker.message(Kind.NOTE, "No jdk.astub file found for " + checker.getClass());
+                }
             }
         }
 
