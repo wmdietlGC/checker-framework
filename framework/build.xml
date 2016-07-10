@@ -381,7 +381,10 @@
     </target>
 
     <target name="loader-tests" depends="loader-dir-test,loader-jar-test"
-                description="Run tests for the annotation class loader"/>
+                description="Run tests for the annotation class loader">
+      <echo message="Finished loader-tests"/>
+      <echo message=""/>
+    </target>
 
     <target name="loader-dir-test" depends="build-tests"
             description="Run tests for the annotation class loader by loading from build directories">
