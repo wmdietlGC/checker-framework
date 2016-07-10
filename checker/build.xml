@@ -1054,6 +1054,8 @@ So, use our own archived version.
 
     <target name="jtreg-tests-checkers" depends="-def-jtreg,jar"
             description="Run checker jtreg tests">
+        <!-- This directory is needed only if a jtreg test fails. -->
+        <mkdir dir="build/jtreg/all/report/text" />
         <jtreg-tool name="all" tests="."/>
     </target>
 
