@@ -37,12 +37,13 @@
 #     (It may be necessary to edit some of the variable settings in the
 #     script.)  If successful, this will replace checker/dist/jdk8.jar
 #     with a .jar file containing annotations from the annotated JDK source.
-#   
+#
 # 5.  Run the Checker Framework test suite
-#     0. save the newly created jdk8.jar somewhere;
-#     1. check out and build annotated-jdk branch;
-#     2. copy the newly created jdk8.jar to checker/dist; and
-#     3. run "ant tests-nobuildjdk" from Checker Framework's base directory.
+#     1. Copy the newly-created jdk8.jar to the web:
+#      \cp -pf $ch/dist/jdk8.jar /cse/www2/types/checker-framework/annotated-jdk-jars/
+#      chgrp types_www /cse/www2/types/checker-framework/annotated-jdk-jars/*
+#     2. check out the annotated-jdk branch;
+#     3. run "ant dist tests-nobuildjdk" from Checker Framework's base directory.
 
 
 # Build stages for this script:
