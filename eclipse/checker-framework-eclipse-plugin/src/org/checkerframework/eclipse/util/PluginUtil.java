@@ -184,10 +184,11 @@ public class PluginUtil {
         return result;
     }
 
-
-    public static List<String> getStringProp(final Map<CheckerProp, Object> props,
-                                             final CheckerProp prop, final String tag,
-                                             final String ... extras) {
+    public static List<String> getStringProp(
+            final Map<CheckerProp, Object> props,
+            final CheckerProp prop,
+            final String tag,
+            final String... extras) {
         final List<String> out = new ArrayList<String>();
         final String strProp = (String) props.get(prop);
         if (strProp != null && !strProp.isEmpty()) {
