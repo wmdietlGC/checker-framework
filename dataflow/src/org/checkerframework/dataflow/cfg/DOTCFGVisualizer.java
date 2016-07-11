@@ -188,8 +188,8 @@ public class DOTCFGVisualizer<
         return this.sbDigraph.toString();
     }
 
-    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg,
-            /*@Nullable*/ Analysis<A, S, T> analysis) {
+    protected void generateDotNodes(
+            Set<Block> visited, ControlFlowGraph cfg, /*@Nullable*/ Analysis<A, S, T> analysis) {
         IdentityHashMap<Block, List<Integer>> processOrder = getProcessOrder(cfg);
         this.sbDigraph.append("    node [shape=rectangle];\n\n");
         // definition of all nodes including their labels
@@ -354,7 +354,8 @@ public class DOTCFGVisualizer<
 
     @Override
     public void visualizeBlockTransferInput(Block bb, Analysis<A, S, T> analysis) {
-        assert analysis != null : "analysis should be non-null when visualizing the transfer input of a block.";
+        assert analysis != null
+                : "analysis should be non-null when visualizing the transfer input of a block.";
 
         TransferInput<A, S> input = analysis.getInput(bb);
         this.sbStore.setLength(0);
