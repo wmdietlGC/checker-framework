@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+# Needs to be bash because of the use of "set -o pipefail"
 
 # Generates the annotated JDK from old annotation sources (lock and
 # nullness JDKs and stubfiles).  The goal is to transfer all the
@@ -31,8 +32,8 @@
 #     patch -p7 < $cf/checker/jdk/commentouts.diff
 #
 # 4.  Compile the annotated JDK 8 source; this takes about 9 hours.
-#     cd $t/libraries/annotated-jdk8u-jdk
-#     sh -v $cf/checker/jdk/build8.sh
+#      cd $t/libraries/annotated-jdk8u-jdk/src/share/classes
+#      sh -v $cf/checker/jdk/build8.sh
 #     [Will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh but that is untested.  build7.sh isn't tested either.]
 #     (It may be necessary to edit some of the variable settings in the
 #     script.)  If successful, this will replace checker/dist/jdk8.jar
