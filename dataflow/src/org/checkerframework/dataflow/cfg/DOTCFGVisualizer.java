@@ -188,8 +188,8 @@ public class DOTCFGVisualizer<
         return this.sbDigraph.toString();
     }
 
-    protected void generateDotNodes(
-            Set<Block> visited, ControlFlowGraph cfg, Analysis<A, S, T> analysis) {
+    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg,
+            /*@Nullable*/ Analysis<A, S, T> analysis) {
         IdentityHashMap<Block, List<Integer>> processOrder = getProcessOrder(cfg);
         this.sbDigraph.append("    node [shape=rectangle];\n\n");
         // definition of all nodes including their labels
@@ -354,6 +354,8 @@ public class DOTCFGVisualizer<
 
     @Override
     public void visualizeBlockTransferInput(Block bb, Analysis<A, S, T> analysis) {
+        assert analysis != null : "analysis should be non-null when visualizing the transfer input of a block.";
+
         TransferInput<A, S> input = analysis.getInput(bb);
         this.sbStore.setLength(0);
 
@@ -404,13 +406,13 @@ public class DOTCFGVisualizer<
 
     @Override
     public void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<A, S, T> analysis) {
-        A value = analysis.getValue(t);
-        String valueInfo = "";
-        if (value != null) {
-            valueInfo = "    > " + prepareString(value.toString());
+        this.sbBlock.append(prepareString(t.toString()) + "   [ " + prepareNodeType(t) + " ]");
+        if (analysis != null) {
+            A value = analysis.getValue(t);
+            if (value != null) {
+                this.sbBlock.append("    > " + prepareString(value.toString()));
+            }
         }
-        this.sbBlock.append(
-                prepareString(t.toString()) + "   [ " + prepareNodeType(t) + " ]" + valueInfo);
     }
 
     protected String prepareNodeType(Node t) {
