@@ -1,5 +1,22 @@
 package org.checkerframework.framework.stub;
 
+import annotations.Annotation;
+import annotations.el.AClass;
+import annotations.el.ADeclaration;
+import annotations.el.AElement;
+import annotations.el.AField;
+import annotations.el.AMethod;
+import annotations.el.AScene;
+import annotations.el.ATypeElement;
+import annotations.el.AnnotationDef;
+import annotations.el.BoundLocation;
+import annotations.el.DefException;
+import annotations.el.InnerTypeLocation;
+import annotations.el.LocalLocation;
+import annotations.field.AnnotationFieldType;
+import annotations.io.IndexFileParser;
+import annotations.io.IndexFileWriter;
+import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntry;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import org.checkerframework.framework.util.PluginUtil;
 import org.checkerframework.stubparser.JavaParser;
 import org.checkerframework.stubparser.ParseException;
 import org.checkerframework.stubparser.ast.CompilationUnit;
@@ -45,26 +62,6 @@ import org.checkerframework.stubparser.ast.type.Type;
 import org.checkerframework.stubparser.ast.type.VoidType;
 import org.checkerframework.stubparser.ast.type.WildcardType;
 import org.checkerframework.stubparser.ast.visitor.GenericVisitorAdapter;
-import org.checkerframework.framework.util.PluginUtil;
-
-import annotations.Annotation;
-import annotations.el.AClass;
-import annotations.el.ADeclaration;
-import annotations.el.AElement;
-import annotations.el.AField;
-import annotations.el.AMethod;
-import annotations.el.AScene;
-import annotations.el.ATypeElement;
-import annotations.el.AnnotationDef;
-import annotations.el.BoundLocation;
-import annotations.el.DefException;
-import annotations.el.InnerTypeLocation;
-import annotations.el.LocalLocation;
-import annotations.field.AnnotationFieldType;
-import annotations.io.IndexFileParser;
-import annotations.io.IndexFileWriter;
-
-import com.sun.tools.javac.code.TypeAnnotationPosition.TypePathEntry;
 
 /**
  * Convert a JAIF file plus a stub file into index files (JAIFs).
@@ -210,7 +207,6 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
           if (!pkgName.isEmpty()) { name = pkgName + "." + name; }
           typeDecl.accept(converter, scene.classes.vivify(name));
         }
-      }
     }
   }
 
@@ -276,64 +272,59 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
         visitType(param.getType(), field.type);
       }
     }
-    if (rcvrAnnos != null) {
-      for (AnnotationExpr expr : rcvrAnnos) {
-        Annotation anno = extractAnnotation(expr);
-        method.receiver.tlAnnotationsHere.add(anno);
-      }
+
+    /**
+     * Entry point of recursive-descent IndexUnit to AScene transformer.
+     *
+     * @param iu {@link IndexUnit} representing stubfile
+     * @return {@link AScene} containing annotations from stubfile
+     */
+    private static void extractScene(IndexUnit iu, AScene scene) {
+        for (CompilationUnit cu : iu.getCompilationUnits()) {
+            List<TypeDeclaration> typeDecls = cu.getTypes();
+            if (typeDecls != null) {
+                List<ImportDeclaration> impDecls = cu.getImports();
+                PackageDeclaration pkgDecl = cu.getPackage();
+                for (TypeDeclaration typeDecl : typeDecls) {
+                    ToIndexFileConverter converter =
+                            new ToIndexFileConverter(pkgDecl, impDecls, scene);
+                    String pkgName = converter.pkgName;
+                    String name = typeDecl.getName();
+                    if (!pkgName.isEmpty()) {
+                        name = pkgName + "." + name;
+                    }
+                    typeDecl.accept(converter, scene.classes.vivify(name));
+                }
+            }
+        }
     }
-    return body == null ? null : body.accept(this, method);
-    //return super.visit(decl, elem);
-  }
 
-  @Override
-  public Void visit(EnumConstantDeclaration decl, AElement elem) {
-    AField field = ((AClass) elem).fields.vivify(decl.getName());
-    visitDecl(decl, field);
-    return super.visit(decl, field);
-  }
+    /**
+     * Builds simplified annotation from its declaration.
+     * Only the name is included, because stubfiles do not generally have
+     * access to the full definitions of annotations.
+     *
+     * @param expr
+     * @return
+     */
+    private static Annotation extractAnnotation(AnnotationExpr expr) {
+        //String exprName = expr.getName().getName();
+        String exprName = expr.toString().substring(1); // 1 for '@'
+        //String exprName = resolve(expr.getName().getName());
 
-  @Override
-  public Void visit(EnumDeclaration decl, AElement elem) {
-    visitDecl(decl, (ADeclaration) elem);
-    return super.visit(decl, elem);
-  }
-
-  @Override
-  public Void visit(FieldDeclaration decl, AElement elem) {
-    for (VariableDeclarator v : decl.getVariables()) {
-      AClass clazz = (AClass) elem;
-      AField field = clazz.fields.vivify(v.getId().getName());
-      visitDecl(decl, field);
-      visitType(decl.getType(), field.type);
+        // Eliminate jdk.Profile+Annotation, a synthetic annotation that
+        // the JDK adds, apparently for profiling.
+        if (exprName.contains("+")) {
+            return null;
+        }
+        AnnotationDef def = new AnnotationDef(exprName);
+        def.setFieldTypes(Collections.<String, AnnotationFieldType>emptyMap());
+        return new Annotation(def, Collections.<String, Object>emptyMap());
     }
-    return null;
-  }
 
-  @Override
-  public Void visit(InitializerDeclaration decl, AElement elem) {
-    BlockStmt block = decl.getBlock();
-    AClass clazz = (AClass) elem;
-    block.accept(this,
-        clazz.methods.vivify(decl.isStatic() ? "<clinit>" : "<init>"));
-    return null;
-  }
-
-  @Override
-  public Void visit(MethodDeclaration decl, AElement elem) {
-    Type type = decl.getType();
-    List<Parameter> params = decl.getParameters();
-    List<TypeParameter> typeParams = decl.getTypeParameters();
-    List<AnnotationExpr> rcvrAnnos = decl.getReceiverAnnotations();
-    BlockStmt body = decl.getBody();
-    StringBuilder sb = new StringBuilder(decl.getName()).append('(');
-    AClass clazz = (AClass) elem;
-    AMethod method;
-    if (params != null) {
-      for (Parameter param : params) {
-        Type ptype = param.getType();
-        sb.append(getJVML(ptype));
-      }
+    @Override
+    public Void visit(AnnotationDeclaration decl, AElement elem) {
+        return null;
     }
     sb.append(')').append(getJVML(type));
     method = clazz.methods.vivify(sb.toString());
@@ -346,11 +337,11 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
         visitType(param.getType(), field.type);
       }
     }
-    if (rcvrAnnos != null) {
-      for (AnnotationExpr expr : rcvrAnnos) {
-        Annotation anno = extractAnnotation(expr);
-        method.receiver.type.tlAnnotationsHere.add(anno);
-      }
+
+    @Override
+    public Void visit(ClassOrInterfaceDeclaration decl, AElement elem) {
+        visitDecl(decl, (ADeclaration) elem);
+        return super.visit(decl, elem);
     }
     if (typeParams != null) {
       for (int i = 0; i < typeParams.size(); i++) {
@@ -365,35 +356,37 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
         }
       }
     }
-    return body == null ? null : body.accept(this, method);
-  }
 
-  @Override
-  public Void visit(ObjectCreationExpr expr, AElement elem) {
-    ClassOrInterfaceType type = expr.getType();
-    AClass clazz = scene.classes.vivify(type.getName());
-    Expression scope = expr.getScope();
-    List<Type> typeArgs = expr.getTypeArgs();
-    List<Expression> args = expr.getArgs();
-    List<BodyDeclaration> decls = expr.getAnonymousClassBody();
-    if (scope != null) {
-      scope.accept(this, elem);
+    @Override
+    public Void visit(EnumConstantDeclaration decl, AElement elem) {
+        AField field = ((AClass) elem).fields.vivify(decl.getName());
+        visitDecl(decl, field);
+        return super.visit(decl, field);
     }
-    if (args != null) {
-      for (Expression arg : args) {
-        arg.accept(this, elem);
-      }
+
+    @Override
+    public Void visit(EnumDeclaration decl, AElement elem) {
+        visitDecl(decl, (ADeclaration) elem);
+        return super.visit(decl, elem);
     }
-    if (typeArgs != null) {
-      for (Type typeArg : typeArgs) {
-        typeArg.accept(this, elem);
-      }
+
+    @Override
+    public Void visit(FieldDeclaration decl, AElement elem) {
+        for (VariableDeclarator v : decl.getVariables()) {
+            AClass clazz = (AClass) elem;
+            AField field = clazz.fields.vivify(v.getId().getName());
+            visitDecl(decl, field);
+            visitType(decl.getType(), field.type);
+        }
+        return null;
     }
-    type.accept(this, clazz);
-    if (decls != null) {
-      for (BodyDeclaration decl : decls) {
-        decl.accept(this, clazz);
-      }
+
+    @Override
+    public Void visit(InitializerDeclaration decl, AElement elem) {
+        BlockStmt block = decl.getBlock();
+        AClass clazz = (AClass) elem;
+        block.accept(this, clazz.methods.vivify(decl.isStatic() ? "<clinit>" : "<init>"));
+        return null;
     }
     return null;
   }
@@ -430,21 +423,35 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
         elem.tlAnnotationsHere.add(anno);
       }
     }
-    return null;
-  }
 
-  /**
-   * Copies information from an AST type node to an {@link ATypeElement}.
-   */
-  private Void visitType(Type type, final ATypeElement elem) {
-    List<AnnotationExpr> exprs = type.getAnnotations();
-    if (exprs != null) {
-      for (AnnotationExpr expr : exprs) {
-        Annotation anno = extractAnnotation(expr);
-        if (anno != null) {
-          elem.tlAnnotationsHere.add(anno);
+    @Override
+    public Void visit(ObjectCreationExpr expr, AElement elem) {
+        ClassOrInterfaceType type = expr.getType();
+        AClass clazz = scene.classes.vivify(type.getName());
+        Expression scope = expr.getScope();
+        List<Type> typeArgs = expr.getTypeArgs();
+        List<Expression> args = expr.getArgs();
+        List<BodyDeclaration> decls = expr.getAnonymousClassBody();
+        if (scope != null) {
+            scope.accept(this, elem);
         }
-      }
+        if (args != null) {
+            for (Expression arg : args) {
+                arg.accept(this, elem);
+            }
+        }
+        if (typeArgs != null) {
+            for (Type typeArg : typeArgs) {
+                typeArg.accept(this, elem);
+            }
+        }
+        type.accept(this, clazz);
+        if (decls != null) {
+            for (BodyDeclaration decl : decls) {
+                decl.accept(this, clazz);
+            }
+        }
+        return null;
     }
     visitInnerTypes(type, elem);
     return null;
@@ -465,35 +472,37 @@ public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> 
           visitInnerType(inner, ext);
         }
         return null;
-      }
+    }
 
-      @Override
-      public Void visit(ReferenceType type, InnerTypeLocation loc) {
-        InnerTypeLocation ext = loc;
-        int n = type.getArrayCount();
-        for (int i = 0; i < n; i++) {
-          ext = extendedTypePath(ext, 1, 0);
-          for (AnnotationExpr expr : type.getAnnotationsAtLevel(i)) {
-            ATypeElement typeElem = elem.innerTypes.vivify(ext);
-            Annotation anno = extractAnnotation(expr);
-            typeElem.tlAnnotationsHere.add(anno);
-          }
+    /**
+     * Copies information from an AST declaration node to an {@link ADeclaration}.
+     * Called by visitors for BodyDeclaration subclasses.
+     */
+    private Void visitDecl(BodyDeclaration decl, ADeclaration elem) {
+        List<AnnotationExpr> annoExprs = decl.getAnnotations();
+        if (annoExprs != null) {
+            for (AnnotationExpr annoExpr : annoExprs) {
+                Annotation anno = extractAnnotation(annoExpr);
+                elem.tlAnnotationsHere.add(anno);
+            }
         }
         return null;
-      }
+    }
 
-      @Override
-      public Void visit(WildcardType type, InnerTypeLocation loc) {
-        ReferenceType lower = type.getExtends();
-        ReferenceType upper = type.getSuper();
-        if (lower != null) {
-          InnerTypeLocation ext = extendedTypePath(loc, 2, 0);
-          visitInnerType(lower, ext);
+    /**
+     * Copies information from an AST type node to an {@link ATypeElement}.
+     */
+    private Void visitType(Type type, final ATypeElement elem) {
+        List<AnnotationExpr> exprs = type.getAnnotations();
+        if (exprs != null) {
+            for (AnnotationExpr expr : exprs) {
+                Annotation anno = extractAnnotation(expr);
+                if (anno != null) {
+                    elem.tlAnnotationsHere.add(anno);
+                }
+            }
         }
-        if (upper != null) {
-          InnerTypeLocation ext = extendedTypePath(loc, 2, 0);
-          visitInnerType(upper, ext);
-        }
+        visitInnerTypes(type, elem);
         return null;
       }
 
