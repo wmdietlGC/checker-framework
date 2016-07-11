@@ -81,5 +81,5 @@ done
 
 # recreate jar
 rm -f ${WORKDIR}/jdk.jar
-jar cf ${WORKDIR}/jdk.jar *
+(cd ${WORKDIR}/META-INF/sym/rt.jar && jar cf ${WORKDIR}/jdk.jar *)
 
