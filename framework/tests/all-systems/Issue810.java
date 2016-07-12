@@ -6,4 +6,10 @@ import java.util.*;
 class Issue810 {
     Map<String, String> m = new HashMap<>();
     Set<String> n = m.keySet();
+
+    // works! (no crash)
+    // void foo(Map<String, String> m) {
+    //     Set<String> n = m.keySet();
+    // }
+
 }

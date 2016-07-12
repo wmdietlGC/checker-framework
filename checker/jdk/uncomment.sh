@@ -1,17 +1,32 @@
 #!/bin/sh
 
+# Utility that takes Java source file with methods stubbed/commented
+# out and creates and compiles variants with one method restored at
+# a time.  Useful for finding the method that makes a processor crash.
+
+# To prepare input file, for each concrete non-constructor method in any
+# class:
+# 1.  Find the opening bracket and append (on the same line):
+#         throw new RuntimeException("cf-bug");} //{
+# 2.  Insert "//" at the beginning of each remaining line in the method
+#     body.
+# 3.  If the closing bracket is commented out, put it on its own line
+#     below.
+
 set -o pipefail
 
 [ $# -ne 1 ] && echo "usage: `basename $0` sourcefile.java" && exit 1
-[ -z "${CHECKERFRAMEWORK}" ] && echo "CHECKERFRAMEWORK not set" && exit 1
+[ ! -z "${CHECKERFRAMEWORK}" ] || (echo "CHECKERFRAMEWORK not set" && exit 1)
 
 # annotated-jdk8u-jdk should be Checker Framework sibling
 JSR308=`(cd "${CHECKERFRAMEWORK}/.." && pwd)`
 WORKDIR=`(cd "\`dirname $0\`" && pwd)`
 SRCDIR="${JSR308}/annotated-jdk8u-jdk/src/share/classes"
 ORIGINAL="${SRCDIR}/$1"
-BASE=`basename "$1" .java`
+BASE=`dirname $1`/`basename "$1" .java`
 COPY="${BASE}.0"
+
+# CURRENT is the loop index, count is the limit
 COUNT=`expr \`grep -c cf-bug "${ORIGINAL}"\` + 0`
 CURRENT=`expr 0`
 

@@ -1,58 +1,74 @@
-#!/bin/sh
+#!/bin/bash
+# Needs to be bash because of the use of "set -o pipefail"
 
-# Generates the annotated JDK from old annotation sources (nullness JDK
-# and stubfiles).  The goal is to transfer all the annotations from the
-# sources to the JDK source, which will be the new home for all the
-# annotations associated with the checkers that are distributed with the
-# Checker Framework.
-#
-# Prerequisites:
+# Generates the annotated JDK from old annotation sources (lock and
+# nullness JDKs and stubfiles).  The goal is to transfer all the
+# annotations from the sources to the JDK source, which will be the new
+# home for all the annotations associated with the checkers that are
+# distributed with the Checker Framework.
+
+# To run:
 #
 # 1.  Clone and build the checker framework from source.
 #     git clone https://github.com/typetools/checker-framework
-#     cd checker-framework && ant
+#     cd checker-framework
+#     git checkout create-annotated-jdk
+#     ant
 #
 # 2.  Clone the OpenJDK 8u repository and sub-repositories.
 #     hg clone http://hg.openjdk.java.net/jdk8u/jdk8u  [yes, jdk8u*2]
+#     cd jdk8u && hg clone http://hg.openjdk.java.net/jdk8/jdk8/jdk
+#     [Previously:
 #     cd jdk8u && sh ./get_source
+#     but you don't really need all those files.]
 #
-# This script should be run from the top-level OpenJDK directory
-# ("jdk8u" by default).
+# 3.  Run this script from the top-level OpenJDK directory
+#     ("jdk8u" by default); this takes about 2 hours.
+#     The first time you do so, edit this script to change "COMMENTS=0"
+#     to "COMMENTS=1", then edit the script to set it back afterward.
+#     .../checker-framework/checker/jdk/annotate-jdk.sh
+#     Apply additional diffs:
+#     cd $t/libraries/annotated-jdk8u-jdk
+#     patch -p7 < $cf/checker/jdk/commentouts.diff
 #
-#
-# Build stages:
+# 4.  Compile the annotated JDK 8 source; this takes about 9 hours.
+#      cd $t/libraries/annotated-jdk8u-jdk/src/share/classes
+#      sh -v $cf/checker/jdk/build8.sh
+#     [The command to run will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh but that is untested.  build7.sh isn't tested either.]
+#     (It may be necessary to edit some of the variable settings in the
+#     script.)  If successful, this will replace checker/dist/jdk8.jar
+#     with a .jar file containing annotations from the annotated JDK source.
+#   
+# 5.  Run the Checker Framework test suite
+#     1. check out and build annotated-jdk branch;
+#     2. run "ant tests-nobuildjdk" from Checker Framework's base directory.
+
+
+# Build stages for this script:
 #
 # 0.  Restore comments from old nullness JDK and stubfiles.
 #     (These comments explain non-intuitive annotation choices, etc.
-#     This stage should run only once.)
+#     This stage should run only once.  You have to edit this file
+#     to make this happen.)
 #
-# 1.  Extract annotations from the nullness JDK into JAIFs.
+# 1.  Extract annotations from the lock and nullness JDKs into JAIFs.
 #
 # 2.  Convert old stubfiles into JAIFs.
 #
 # 3.  Combine the results of the previous two stages.
 #
 # 4.  Insert annotations from JAIFs into JDK source files.
-#
-#
-# The end product of these stages is the annotated JDK 8 source.  To
-# build, invoke the Checker Framework script checker/jdk/build8.sh.
-# (It may be necessary to edit some of the variable settings in the
-# script.)  If successful, build8 will replace checker/dist/jdk8.jar
-# with a JAR containing annotations from the annotated JDK source.
-#
-# To run the Checker Framework test suite:
-# 0. save the newly created jdk8.jar somewhere;
-# 1. check out and build annotated-jdk branch;
-# 2. copy the newly created jdk8.jar to checker/dist; and
-# 3. run "ant tests-nobuildjdk" from Checker Framework's base directory.
 
-export SCRIPTDIR=`cd \`dirname $0\` && pwd`
+
+[ -r ${CHECKERFRAMEWORK} ] || exit 1
+
+export SCRIPTDIR=`dirname \`readlink -m -v $0\``
 export WD="`pwd`"            # run from top directory of jdk8u clone
 export JDK="${WD}/jdk"       # JDK to be annotated
 export TMPDIR="${WD}/tmp"    # directory for temporary files
 export JAIFDIR="${WD}/jaifs" # directory for generated JAIFs
 export PATCH=${SCRIPTDIR}/ad-hoc.diff
+export ADEFS=${SCRIPTDIR}/annotation-defs.jaif
 
 # parameters derived from environment
 export JSR308=`[ -d "${CHECKERFRAMEWORK}" ] && cd "${CHECKERFRAMEWORK}/.." && pwd`
@@ -69,34 +85,40 @@ export CLASSPATH=".:${JDK}/build/classes:${LTJAR}:${JDJAR}:${CFJAR}:${AFUJAR}:${
 export RET=0
 
 
-# generate @AnnotatedFor annotations
+# Generate @AnnotatedFor annotations.
+# Reads from stdin and writes to stdout.
 addAnnotatedFor() {
     java org.checkerframework.framework.stub.AddAnnotatedFor
 }
 
-# find JAIFs in hierarchical directory tree and insert indicated
-# annotations into corresponding source files
+# Find JAIFs in hierarchical directory tree and insert the JAIFs'
+# annotations into corresponding source files.
+# Takes one argument, a Java source file.
+# Returns non-zero if a command failed.
 annotateSourceFile() {
     R=0
-    BASE="${JAIFDIR}/`dirname "$1"`/`basename "$1" .java`"
+    JAIFBASE="${JAIFDIR}/`dirname "$1"`/`basename "$1" .java`"
     # must insert annotations on inner classes as well
-    for f in ${BASE}.jaif ${BASE}\$*.jaif ; do
-        if [ -r "$f" ] ; then
-            insert-annotations-to-source "$f" "$1"
-            [ $R -ne 0 ] || R=$?
-        fi
-    done
+    JAIFS=`ls ${JAIFBASE}.jaif ${JAIFBASE}[$]*.jaif 2>/dev/null`
+    if [ ! -z "$JAIFS" ] ; then
+        echo insert-annotations-to-source $JAIFS "$1"
+        insert-annotations-to-source $JAIFS "$1"
+        R=$?
+        [ $R -eq 0 ] || echo iats failed with $R
+    fi
     return $R
 }
 
-# convert stubfiles to JAIF
-# first arg is JAIF containing all necessary annotation definitions
+# Convert stubfile to JAIF.
+# Returns non-zero if a command failed.
 convertStub() {
-    java org.checkerframework.framework.stub.ToIndexFileConverter "${WD}/annotation-defs.jaif" $1
+    # First arg is JAIF containing all necessary annotation definitions.
+    java org.checkerframework.framework.stub.ToIndexFileConverter "${ADEFS}" $1
 }
 
-# convert all stubfiles in Checker Framework repository into JAIF format
-# and emit to standard output
+# Convert all jdk.astub stubfiles in Checker Framework repository into JAIF format
+# and emit to standard output.
+# Takes no arguments.
 convertStubs() {
     R=0
     cd "${CHECKERFRAMEWORK}"
@@ -104,35 +126,43 @@ convertStubs() {
 
     for f in `find * -name 'jdk\.astub' -print` ; do
         convertStub "$f"
-        [ $R -ne 0 ] || R=$?
-        g="`dirname $f`/`basename $f .astub`.jaif"
-        [ -r "$g" ] && cat "$g" && rm -f "$g"
+        if [ $? ] ; then
+            g="`dirname $f`/`basename $f .astub`.jaif"
+            cat "$g" && rm -f "$g"
+        else
+            [ $R -ne 0 ] || R=$?
+        fi
     done
     return $R
 }
 
-# split up JAIF into files by package (directory) and class (JAIF)
+# Split up JAIF (piped in from stdin) into files by package (directory) and
+# class (JAIF), in $TMPDIR.
 splitJAIF() {
     awk '
         # save class sections from converted JAIFs to hierarchical JAIF dir.
-        BEGIN {out="";adefs=ENVIRON["WD"]"/annotation-defs.jaif"}
+        BEGIN {out="";adefs=ENVIRON["ADEFS"]}
         /^package / {
-            l=$0;i=index($2,":");d=(i?substr($2,1,i-1):$2)
-            if(d){gsub(/\./,"/",d)}else{d=""}
-            d=ENVIRON["TMPDIR"]"/"d
+            packageline=$0;
+            colonindex=index($2,":");
+            packagedir=(colonindex?substr($2,1,colonindex-1):$2)
+            if(packagedir){gsub(/\./,"/",packagedir)}else{packagedir=""}
+            packagedir=ENVIRON["TMPDIR"]"/"packagedir
         }
         /^class / {
-            i=index($2,":");c=(i?substr($2,1,i-1):$2)
+            colonindex=index($2,":");
+            c=(colonindex?substr($2,1,colonindex-1):$2)
             if(c) {
-                o=d"/"c".jaif"
+                o=packagedir"/"c".jaif"
                 if (o!=out) {
-                    if(out){fflush(out);close(out)};out=o
+                    if(out){fflush(out);close(out)};
+                    out=o
                     if(system("[ -s \""out"\" ]")!=0) {
-                        system("mkdir -p "d" && cp "adefs" "out)
+                        system("mkdir -p "packagedir" && cp "adefs" "out)
                     }
-                    printf("%s\n",l)>>out  # current pkg decl
+                    printf("%s\n",packageline)>>out  # current pkg decl
                 }
-                printf("%s\n",l)>>out  # current pkg decl
+                printf("%s\n",packageline)>>out  # current pkg decl
             }
         }
         /^annotation / { out="" }
@@ -156,24 +186,17 @@ stripDefs() {
 
 COMMENTS=0  # non-zero to enable
 if [ ${COMMENTS} -ne 0 ] ; then
-# download patch
-[ -r annotated-jdk-comment-patch.jaif ] || wget https://types.cs.washington.edu/checker-framework/annotated-jdk-comment-patch.jaif || exit $?
-(cd "${JDK}" && patch -p1 < annotated-jdk-comment-patch.jaif)
+    (cd "${JDK}" && patch -p1 < ${SCRIPTDIR}/annotated-jdk-comment-patch.jaif)
 fi
 
-# download annotation definitions
-[ -r annotation-defs.jaif ]\
- || wget https://types.cs.washington.edu/checker-framework/annotation-defs.jaif\
- || exit $?
 
-
-# Stage 1: extract JAIFs from nullness JDK
+# Stage 1: extract JAIFs from lock and nullness JDKs to ${TMPDIR}
 
 rm -rf "${TMPDIR}"
 mkdir "${TMPDIR}"
 
-(
-    cd "${CHECKERFRAMEWORK}/checker/jdk/nullness/src" || exit 1
+for typesystem in lock nullness ; do
+    cd "${CHECKERFRAMEWORK}/checker/jdk/$typesystem/src" || exit 1
     [ -z "`ls`" ] && echo "no files" 1>&2 && exit 1
 
     mkdir -p ../build
@@ -182,45 +205,51 @@ mkdir "${TMPDIR}"
     cd ../build || exit 1
 
     for f in `find * -name '*\.class' -print` ; do
-        extract-annotations "$f" 1>&2
+        extract-annotations -b "$f" 1>&2
         [ ${RET} -eq 0 ] && RET=$?
     done
 
     for f in `find * -name '*\.jaif' -print` ; do
-        mkdir -p "${TMPDIR}/`dirname $f`" && mv "$f" "${TMPDIR}/$f"
+        mkdir -p "${TMPDIR}/`dirname $f`" && cat "$f" >> "${TMPDIR}/$f"
         [ ${RET} -eq 0 ] && RET=$?
     done
-)
+done
 
-#[ ${RET} -ne 0 ] && echo "stage 1 failed" 1>&2 && exit ${RET}
+[ ${RET} -ne 0 ] && echo "stage 1 failed" 1>&2 && exit ${RET}
 echo "stage 1 complete" 1>&2
 
 
 # Stage 2: convert stub files to JAIFs
 
-convertStubs | splitJAIF
+# sed invocation is temporary workaround for stubfile converter bug
+convertStubs | sed 's/<clinit>:/<clinit>()V/' | splitJAIF
 RET=$?
-#[ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
+[ ${RET} -ne 0 ] && echo "stage 2 failed" 1>&2 && exit ${RET}
 echo "stage 2 complete" 1>&2
 
 
 # Stage 3: combine JAIFs from Stages 1 and 2
 
 rm -rf "${JAIFDIR}"
-# write out JAIFs from TMPDIR, replacing (bogus) annotation defs
+# Copy JAIFs from TMPDIR to JAIFDIR.  Also makes some changes:
+#  * Replace (bogus) annotation defs from stubfile converter,
+#    which makes up empty definitions.
+#  * Add @AnnotatedFor annotations.
 for f in `(cd "${TMPDIR}" && find * -name '*\.jaif' -print)` ; do
+    RET=0
     g="${JAIFDIR}/$f"
     mkdir -p `dirname $g`
     echo "$g" 1>&2
-    cp "${WD}/annotation-defs.jaif" "$g"
 
-    # first write out standard annotation defs
-    # then strip out empty annotation defs
-    # also generate and insert @AnnotatedFor annotations
-    (cat "${WD}/annotation-defs.jaif" && stripDefs < "${TMPDIR}/$f") | addAnnotatedFor > "$g"
-    [ ${RET} -ne 0 ] || RET=$?
+    # First write out standard annotation defs,
+    # then strip out empty annotation defs from $f.
+    # Also generate and insert @AnnotatedFor annotations.
+    (cat "${ADEFS}" && stripDefs < "${TMPDIR}/$f") | addAnnotatedFor > "$g"
+    RET=$?
+    [ ${RET} -eq 0 ] || echo "phase 3 error (${RET}): $f"
 done
 
+# FIXME: following line commented out until nonzero exit code eliminated
 #[ ${RET} -ne 0 ] && echo "stage 3 failed" 1>&2 && exit ${RET}
 echo "stage 3 complete" 1>&2
 
@@ -235,7 +264,8 @@ echo "stage 3 complete" 1>&2
 
     for f in `find * -name '*\.java' -print` ; do
         annotateSourceFile $f
-        [ ${RET} -ne 0 ] || RET=$?
+        RET=$?
+        [ ${RET} -eq 0 ] || echo "annotateSourceFile failed (${RET}) on $f"
     done
 
     #[ ${RET} -ne 0 ] && echo "stage 4 failed" 1>&2 && exit ${RET}
@@ -244,8 +274,8 @@ echo "stage 3 complete" 1>&2
     rsync -au annotated/* .
 
     # apply ad-hoc patch to correct miscellaneous errors
-    if [ -r ${SCRIPTDIR}/ad-hoc.diff ] ; then
-        patch -p1 < ${SCRIPTDIR}/ad-hoc.diff
+    if [ -r ${PATCH} ] ; then
+        patch -p1 < ${PATCH}
     fi
 )
 echo "stage 4 complete" 1>&2

@@ -65,21 +65,36 @@ import org.checkerframework.stubparser.ast.type.WildcardType;
 import org.checkerframework.stubparser.ast.visitor.GenericVisitorAdapter;
 
 /**
- * Program to convert a stub file into index files (JAIFs).
+ * Convert a JAIF file plus a stub file into index files (JAIFs).
  * Note that the resulting index files will not include annotation
  * definitions, for which stubfiles do not generally provide complete
  * information.
  *
+ * <p>
+ *
+ * An instance of the class represents conversion of 1 stub file, but the
+ * static {@link #main(String[])} method converts multiple stub files,
+ * instantiating the class multiple times.
  * @author dbro
  */
 public class ToIndexFileConverter extends GenericVisitorAdapter<Void, AElement> {
+    // The possessive modifiers "*+" are for efficiency only.
     private static Pattern packagePattern =
-            Pattern.compile("\\bpackage *+((?:[^.]*+[.] *+)*+[^ ]*) *+;", Pattern.DOTALL);
+            Pattern.compile("\\bpackage *+((?:[^.]*+[.] *+)*+[^ ]*) *+;");
     private static Pattern importPattern =
-            Pattern.compile("\\bimport *+((?:[^.]*+[.] *+)*+[^ ]*) *+;", Pattern.DOTALL);
+            Pattern.compile("\\bimport *+((?:[^.]*+[.] *+)*+[^ ]*) *+;");
 
+    /**
+     * Package name that is active at the current point in the input file.
+     * Changes as package declarations are encountered.
+     */
     private final String pkgName;
+    /** Imports that appear in the stub file. */
     private final List<String> imports;
+    /**
+     * A scene read from the input JAIF file,
+     * and will be written to the output JAIF file.
+     */
     private final AScene scene;
 
     /**
