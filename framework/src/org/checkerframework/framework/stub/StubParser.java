@@ -384,21 +384,22 @@ public class StubParser {
         // couldn't find type.  not in class path
         if (typeElt == null) {
             boolean warn = true;
-            if (typeDecl.getAnnotations() != null) {
-                for (AnnotationExpr anno : typeDecl.getAnnotations()) {
-                    if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
-                        warn = false;
+            if (! debugStubParser) {
+                if (typeDecl.getAnnotations() != null) {
+                    for (AnnotationExpr anno : typeDecl.getAnnotations()) {
+                        if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
+                            warn = false;
+                        }
+                    }
+                }
+                if (packageAnnos != null) {
+                    for (AnnotationExpr anno : packageAnnos) {
+                        if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
+                            warn = false;
+                        }
                     }
                 }
             }
-            if (packageAnnos != null) {
-                for (AnnotationExpr anno : packageAnnos) {
-                    if (anno.getName().getName().contentEquals("NoStubParserWarning")) {
-                        warn = false;
-                    }
-                }
-            }
-            warn = warn || debugStubParser;
             if (warn) {
                 stubWarnIfNotFound("Type not found: " + typeName);
             }
