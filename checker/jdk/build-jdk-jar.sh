@@ -48,7 +48,10 @@ export CF_JAVAC="java -Xmx512m -jar ${CF_JAR} -Xbootclasspath/p:${BOOTDIR}"
 export CP="${BINDIR}:${BOOTDIR}:${LT_BIN}:${TOOLSJAR}:${CF_BIN}:${CF_JAR}"
 export JFLAGS="-XDignore.symbol.file=true -Xmaxerrs 20000 -Xmaxwarns 20000\
  -source 8 -target 8 -encoding ascii -cp ${CP}"
-export PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,nullness,signature"
+# TODO: i18n is disabled until issue #857 is fixed:
+# https://github.com/typetools/checker-framework/issues/857
+# export PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,nullness,signature"
+export PROCESSORS="fenum,formatter,guieffect,i18nformatter,interning,nullness,signature"
 export PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=source\
  -AprintErrorStack -Awarns"
 export JAIFDIR="${WORKDIR}/jaifs"
