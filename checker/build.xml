@@ -635,6 +635,10 @@
                     <include name="**/*Test.java"/>
                     <exclude name="**/AllTests.java"/>
 
+                    <!-- Temporary, due to https://github.com/typetools/checker-framework/issues/857 -->
+                    <exclude name="**/CompilerMessagesTest.java"/>
+                    <exclude name="**/I18nTest.java"/>
+
                     <!-- Framework classes -->
                     <exclude name="**/CheckerTest.java"/>
                     <exclude name="**/ParameterizedCheckerTest.java"/>
