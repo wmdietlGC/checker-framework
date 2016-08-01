@@ -32,7 +32,8 @@ public class ForEach {
     // An example taken from plume-lib's UtilMDE
     public static <T extends Object> List<T> removeDuplicates(List<T> l) {
         // There are shorter solutions that do not maintain order.
-        HashSet<T> hs = new HashSet<T>(l.size());
+        int lsize = l.size();
+        HashSet<T> hs = new HashSet<T>(lsize);
         List<T> result = new ArrayList<T>();
         for (T t : l) {
             if (hs.add(t)) {
