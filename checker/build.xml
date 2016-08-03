@@ -639,6 +639,9 @@
                     <exclude name="**/CompilerMessagesTest.java"/>
                     <exclude name="**/I18nTest.java"/>
 
+                    <!-- Temporary, until I re-build the annotated JDK without fenum annotations. -->
+                    <exclude name="**/Fenum*Test.java"/>
+
                     <!-- Framework classes -->
                     <exclude name="**/CheckerTest.java"/>
                     <exclude name="**/ParameterizedCheckerTest.java"/>
