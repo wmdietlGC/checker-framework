@@ -13,6 +13,7 @@ import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedArrayTyp
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedDeclaredType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
 import org.checkerframework.framework.util.AnnotatedTypes;
+import org.checkerframework.javacutil.ElementUtils;
 import org.checkerframework.javacutil.TreeUtils;
 
 /**
@@ -68,10 +69,10 @@ public class CollectionToArrayHeuristics {
         this.atypeFactory = factory;
 
         this.collectionToArrayObject =
-                TreeUtils.getMethod(java.util.Collection.class.getName(), "toArray", 0, env);
+                ElementUtils.getMethod(java.util.Collection.class.getName(), "toArray", 0, env);
         this.collectionToArrayE =
-                TreeUtils.getMethod(java.util.Collection.class.getName(), "toArray", 1, env);
-        this.size = TreeUtils.getMethod(java.util.Collection.class.getName(), "size", 0, env);
+                ElementUtils.getMethod(java.util.Collection.class.getName(), "toArray", 1, env);
+        this.size = ElementUtils.getMethod(java.util.Collection.class.getName(), "size", 0, env);
         this.collectionType =
                 factory.fromElement(env.getElementUtils().getTypeElement("java.util.Collection"));
     }

@@ -17,6 +17,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -406,5 +407,46 @@ public class ElementUtils {
         }
 
         return true;
+    }
+
+    /** Returns true if the given element is, or overrides, method. */
+    public static boolean isMethod(
+            ExecutableElement questioned, ExecutableElement method, ProcessingEnvironment env) {
+        TypeElement enclosing = (TypeElement) questioned.getEnclosingElement();
+        return questioned.equals(method)
+                || env.getElementUtils().overrides(questioned, method, enclosing);
+    }
+
+    /**
+     * Returns the ExecutableElement for a method declaration of methodName, in class typeName, with
+     * params parameters.
+     *
+     * <p>TODO: to precisely resolve method overloading, we should use parameter types and not just
+     * the number of parameters!
+     */
+    public static ExecutableElement getMethod(
+            String typeName, String methodName, int params, ProcessingEnvironment env) {
+        TypeElement typeElt = env.getElementUtils().getTypeElement(typeName);
+        for (ExecutableElement exec : ElementFilter.methodsIn(typeElt.getEnclosedElements())) {
+            if (exec.getSimpleName().contentEquals(methodName)
+                    && exec.getParameters().size() == params) {
+                return exec;
+            }
+        }
+        ErrorReporter.errorAbort("TreeUtils.getMethod: shouldn't be here!");
+        return null; // dead code
+    }
+
+    public static List<ExecutableElement> getMethodList(
+            String typeName, String methodName, int params, ProcessingEnvironment env) {
+        List<ExecutableElement> methods = new ArrayList<>();
+        TypeElement typeElement = env.getElementUtils().getTypeElement(typeName);
+        for (ExecutableElement exec : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
+            if (exec.getSimpleName().contentEquals(methodName)
+                    && exec.getParameters().size() == params) {
+                methods.add(exec);
+            }
+        }
+        return methods;
     }
 }

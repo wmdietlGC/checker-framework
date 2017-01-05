@@ -39,6 +39,7 @@ import org.checkerframework.framework.util.AnnotationBuilder;
 import org.checkerframework.framework.util.GraphQualifierHierarchy;
 import org.checkerframework.framework.util.MultiGraphQualifierHierarchy.MultiGraphFactory;
 import org.checkerframework.javacutil.AnnotationUtils;
+import org.checkerframework.javacutil.ElementUtils;
 import org.checkerframework.javacutil.TreeUtils;
 
 /**
@@ -109,10 +110,10 @@ public class RegexAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
         super(checker);
 
         patternCompile =
-                TreeUtils.getMethod(
+                ElementUtils.getMethod(
                         java.util.regex.Pattern.class.getName(), "compile", 1, processingEnv);
         partialRegexValue =
-                TreeUtils.getMethod(
+                ElementUtils.getMethod(
                         org.checkerframework.checker.regex.qual.PartialRegex.class.getName(),
                         "value",
                         0,
@@ -124,7 +125,7 @@ public class RegexAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
         POLYREGEX = AnnotationUtils.fromClass(elements, PolyRegex.class);
 
         regexValueElement =
-                TreeUtils.getMethod(
+                ElementUtils.getMethod(
                         org.checkerframework.checker.regex.qual.Regex.class.getName(),
                         "value",
                         0,

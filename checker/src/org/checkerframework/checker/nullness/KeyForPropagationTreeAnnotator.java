@@ -13,6 +13,7 @@ import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedDeclaredType;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
 import org.checkerframework.framework.util.typeinference.TypeArgInferenceUtil;
+import org.checkerframework.javacutil.ElementUtils;
 import org.checkerframework.javacutil.Pair;
 import org.checkerframework.javacutil.TreeUtils;
 
@@ -57,7 +58,7 @@ public class KeyForPropagationTreeAnnotator extends TreeAnnotator {
         super(atypeFactory);
         this.keyForPropagator = propagationTreeAnnotator;
         keySetMethod =
-                TreeUtils.getMethod(
+                ElementUtils.getMethod(
                         java.util.Map.class.getName(),
                         "keySet",
                         0,

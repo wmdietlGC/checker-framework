@@ -677,36 +677,7 @@ public final class TreeUtils {
         }
         MethodInvocationTree methInvok = (MethodInvocationTree) tree;
         ExecutableElement invoked = TreeUtils.elementFromUse(methInvok);
-        return isMethod(invoked, method, env);
-    }
-
-    /** Returns true if the given element is, or overrides, method. */
-    private static boolean isMethod(
-            ExecutableElement questioned, ExecutableElement method, ProcessingEnvironment env) {
-        return (questioned.equals(method)
-                || env.getElementUtils()
-                        .overrides(
-                                questioned,
-                                method,
-                                (TypeElement) questioned.getEnclosingElement()));
-    }
-
-    /**
-     * Returns the ExecutableElement for a method declaration of methodName, in class typeName, with
-     * params parameters.
-     *
-     * <p>TODO: to precisely resolve method overloading, we should use parameter types and not just
-     * the number of parameters!
-     */
-    public static ExecutableElement getMethod(
-            String typeName, String methodName, int params, ProcessingEnvironment env) {
-        TypeElement mapElt = env.getElementUtils().getTypeElement(typeName);
-        for (ExecutableElement exec : ElementFilter.methodsIn(mapElt.getEnclosedElements())) {
-            if (exec.getSimpleName().contentEquals(methodName)
-                    && exec.getParameters().size() == params) return exec;
-        }
-        ErrorReporter.errorAbort("TreeUtils.getMethod: shouldn't be here!");
-        return null; // dead code
+        return ElementUtils.isMethod(invoked, method, env);
     }
 
     /**
