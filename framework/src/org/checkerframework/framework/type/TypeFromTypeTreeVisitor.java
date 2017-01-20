@@ -2,7 +2,11 @@ package org.checkerframework.framework.type;
 
 import com.sun.source.tree.*;
 import com.sun.source.tree.Tree.Kind;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeVariable;
@@ -13,6 +17,7 @@ import org.checkerframework.javacutil.InternalUtils;
 
 /**
  * Converts type trees into AnnotatedTypeMirrors
+ *
  * @see org.checkerframework.framework.type.TypeFromTree
  */
 class TypeFromTypeTreeVisitor extends TypeFromTreeVisitor {

@@ -1,5 +1,6 @@
-import java.util.*;
-import tests.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import testlib.util.*;
 
 public class Supertypes {
     static interface Inter<E> {}

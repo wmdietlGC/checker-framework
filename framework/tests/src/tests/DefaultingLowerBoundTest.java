@@ -1,20 +1,16 @@
 package tests;
 
 import java.io.File;
-import org.checkerframework.framework.test.CheckerFrameworkTest;
+import java.util.List;
+import org.checkerframework.framework.test.CheckerFrameworkPerDirectoryTest;
 import org.junit.runners.Parameterized.Parameters;
+import testlib.defaulting.DefaultingLowerBoundChecker;
 
-/**
- * Created by jburke on 9/29/14.
- */
-public class DefaultingLowerBoundTest extends CheckerFrameworkTest {
+/** Created by jburke on 9/29/14. */
+public class DefaultingLowerBoundTest extends CheckerFrameworkPerDirectoryTest {
 
-    public DefaultingLowerBoundTest(File testFile) {
-        super(
-                testFile,
-                tests.defaulting.DefaultingLowerBoundChecker.class,
-                "defaulting",
-                "-Anomsgtext");
+    public DefaultingLowerBoundTest(List<File> testFiles) {
+        super(testFiles, DefaultingLowerBoundChecker.class, "defaulting", "-Anomsgtext");
     }
 
     @Parameters

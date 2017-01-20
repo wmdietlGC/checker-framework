@@ -1,8 +1,10 @@
-import java.util.*;
 import org.checkerframework.dataflow.qual.Pure;
-import org.checkerframework.framework.qual.*;
+import org.checkerframework.framework.qual.EnsuresQualifier;
+import org.checkerframework.framework.qual.EnsuresQualifierIf;
+import org.checkerframework.framework.qual.EnsuresQualifiers;
+import org.checkerframework.framework.qual.EnsuresQualifiersIf;
 import org.checkerframework.framework.test.*;
-import tests.util.*;
+import testlib.util.*;
 
 class Postcondition {
 
@@ -14,7 +16,7 @@ class Postcondition {
         return null;
     }
 
-    /***** normal postcondition ******/
+    /** *** normal postcondition ***** */
     @EnsuresQualifier(expression = "f1", qualifier = Odd.class)
     void oddF1() {
         f1 = null;
@@ -79,11 +81,13 @@ class Postcondition {
         oddF1();
         @Odd String l2 = f1;
 
+        //:: error: (flowexpr.parse.error)
         error();
     }
 
     // test parameter syntax
     void t2(@Odd String p1, String p2) {
+        //:: error: (flowexpr.parse.index.too.big)
         param3();
     }
 
@@ -112,7 +116,7 @@ class Postcondition {
         @Odd String l2 = p.p1();
     }
 
-    /***** many postcondition ******/
+    /** *** many postcondition ***** */
     @EnsuresQualifiers({
         @EnsuresQualifier(expression = "f1", qualifier = Odd.class),
         @EnsuresQualifier(expression = "f2", qualifier = Value.class)
@@ -145,10 +149,11 @@ class Postcondition {
         @Odd String l3 = f1;
         @Value String l4 = f2;
 
+        //:: error: (flowexpr.parse.error)
         error2();
     }
 
-    /***** conditional postcondition ******/
+    /** *** conditional postcondition ***** */
     @EnsuresQualifierIf(result = true, expression = "f1", qualifier = Odd.class)
     boolean condOddF1(boolean b) {
         if (b) {
@@ -236,7 +241,7 @@ class Postcondition {
         }
     }
 
-    /***** many conditional postcondition ******/
+    /** *** many conditional postcondition ***** */
     @EnsuresQualifiersIf({
         @EnsuresQualifierIf(result = true, expression = "f1", qualifier = Odd.class),
         @EnsuresQualifierIf(result = false, expression = "f1", qualifier = Value.class)

@@ -11,12 +11,10 @@ import org.checkerframework.checker.formatter.qual.Format;
 import org.checkerframework.checker.formatter.qual.FormatBottom;
 import org.checkerframework.checker.formatter.qual.InvalidFormat;
 import org.checkerframework.checker.formatter.qual.UnknownFormat;
+import org.checkerframework.common.basetype.BaseAnnotatedTypeFactory;
 import org.checkerframework.common.basetype.BaseTypeChecker;
-import org.checkerframework.framework.flow.CFStore;
-import org.checkerframework.framework.flow.CFValue;
 import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
-import org.checkerframework.framework.type.GenericAnnotatedTypeFactory;
 import org.checkerframework.framework.type.QualifierHierarchy;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
@@ -25,18 +23,14 @@ import org.checkerframework.framework.util.MultiGraphQualifierHierarchy.MultiGra
 import org.checkerframework.javacutil.AnnotationUtils;
 
 /**
- * Adds {@link Format} to the type of tree, if it is a {@code String} or
- * {@code char} literal that represents a satisfiable format. The annotation's
- * value is set to be a list of appropriate {@link ConversionCategory} values
- * for every parameter of the format.
+ * Adds {@link Format} to the type of tree, if it is a {@code String} or {@code char} literal that
+ * represents a satisfiable format. The annotation's value is set to be a list of appropriate {@link
+ * ConversionCategory} values for every parameter of the format.
  *
  * @see ConversionCategory
- *
  * @author Konstantin Weitz
  */
-public class FormatterAnnotatedTypeFactory
-        extends GenericAnnotatedTypeFactory<
-                CFValue, CFStore, FormatterTransfer, FormatterAnalysis> {
+public class FormatterAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 
     protected final AnnotationMirror UNKNOWNFORMAT;
     protected final AnnotationMirror FORMAT;

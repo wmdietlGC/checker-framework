@@ -11,8 +11,8 @@ import org.checkerframework.javacutil.ErrorReporter;
 /**
  * Represents the type qualifier hierarchy of a type system.
  *
- * This class is immutable and can be only created through
- * {@link MultiGraphQualifierHierarchy.MultiGraphFactory}.
+ * <p>This class is immutable and can be only created through {@link
+ * MultiGraphQualifierHierarchy.MultiGraphFactory}.
  */
 public class GraphQualifierHierarchy extends MultiGraphQualifierHierarchy {
 
@@ -52,8 +52,8 @@ public class GraphQualifierHierarchy extends MultiGraphQualifierHierarchy {
     /**
      * Returns the top qualifier for this hierarchy.
      *
-     * The top qualifier is inferred from the hierarchy, as being the only
-     * one without any super qualifiers
+     * <p>The top qualifier is inferred from the hierarchy, as being the only one without any super
+     * qualifiers
      */
     @Override
     public Set<? extends AnnotationMirror> getTopAnnotations() {
@@ -77,6 +77,8 @@ public class GraphQualifierHierarchy extends MultiGraphQualifierHierarchy {
     public boolean isSubtype(
             Collection<? extends AnnotationMirror> rhs,
             Collection<? extends AnnotationMirror> lhs) {
+        rhs = replacePolyAll(rhs);
+        lhs = replacePolyAll(lhs);
         if (lhs.isEmpty() || rhs.isEmpty()) {
             ErrorReporter.errorAbort(
                     "GraphQualifierHierarchy: Empty annotations in lhs: "

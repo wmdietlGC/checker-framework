@@ -7,24 +7,19 @@ import org.checkerframework.dataflow.analysis.RegularTransferResult;
 import org.checkerframework.dataflow.analysis.TransferInput;
 import org.checkerframework.dataflow.analysis.TransferResult;
 import org.checkerframework.dataflow.cfg.node.MethodInvocationNode;
-import org.checkerframework.framework.flow.CFAbstractTransfer;
+import org.checkerframework.framework.flow.CFAnalysis;
 import org.checkerframework.framework.flow.CFStore;
+import org.checkerframework.framework.flow.CFTransfer;
 import org.checkerframework.framework.flow.CFValue;
 
-public class FormatterTransfer extends CFAbstractTransfer<CFValue, CFStore, FormatterTransfer> {
+public class FormatterTransfer extends CFTransfer {
 
-    protected FormatterAnalysis analysis;
-    protected FormatterChecker checker;
-
-    public FormatterTransfer(FormatterAnalysis analysis, FormatterChecker checker) {
+    public FormatterTransfer(CFAnalysis analysis) {
         super(analysis);
-        this.analysis = analysis;
-        this.checker = checker;
     }
 
     /**
-     * Makes it so that the {@link FormatUtil#asFormat} method returns
-     * a correctly annotated String.
+     * Makes it so that the {@link FormatUtil#asFormat} method returns a correctly annotated String.
      */
     @Override
     public TransferResult<CFValue, CFStore> visitMethodInvocation(
@@ -43,7 +38,7 @@ public class FormatterTransfer extends CFAbstractTransfer<CFValue, CFStore, Form
                         atypeFactory.treeUtil.categoriesToFormatAnnotation(cats.value());
                 CFValue newResultValue =
                         analysis.createSingleAnnotationValue(
-                                anno, result.getResultValue().getType().getUnderlyingType());
+                                anno, result.getResultValue().getUnderlyingType());
                 return new RegularTransferResult<>(newResultValue, result.getRegularStore());
             }
         }

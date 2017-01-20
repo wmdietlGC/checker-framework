@@ -5,7 +5,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.checkerframework.checker.nullness.AbstractNullnessChecker;
 import org.checkerframework.framework.qual.DefaultInUncheckedCodeFor;
 import org.checkerframework.framework.qual.ImplicitFor;
 import org.checkerframework.framework.qual.LiteralKind;
@@ -13,16 +12,16 @@ import org.checkerframework.framework.qual.SubtypeOf;
 import org.checkerframework.framework.qual.TypeUseLocation;
 
 /**
- * {@link Nullable} is a type annotation that indicates that the value is not
- * known to be non-null (see {@link NonNull}). Only if an expression has a
- * {@link Nullable} type may it be assigned {@code null}.
+ * {@link Nullable} is a type annotation that indicates that the value is not known to be non-null
+ * (see {@link NonNull}). Only if an expression has a {@link Nullable} type may it be assigned
+ * {@code null}.
  *
- * <p>
- * This annotation is associated with the {@link AbstractNullnessChecker}.
+ * <p>This annotation is associated with the {@link
+ * org.checkerframework.checker.nullness.AbstractNullnessChecker}.
  *
  * @see NonNull
  * @see MonotonicNonNull
- * @see AbstractNullnessChecker
+ * @see org.checkerframework.checker.nullness.AbstractNullnessChecker
  * @checker_framework.manual #nullness-checker Nullness Checker
  */
 @SubtypeOf({})

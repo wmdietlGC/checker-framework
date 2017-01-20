@@ -13,8 +13,10 @@ import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeCastTree;
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -41,14 +43,10 @@ import org.checkerframework.javacutil.TreeUtils;
 
 public class ReportVisitor extends BaseTypeVisitor<BaseAnnotatedTypeFactory> {
 
-    /**
-     * The tree kinds that should be reported.
-     */
+    /** The tree kinds that should be reported. */
     private final String[] treeKinds;
 
-    /**
-     * The modifiers that should be reported.
-     */
+    /** The modifiers that should be reported. */
     private final String[] modifiers;
 
     public ReportVisitor(BaseTypeChecker checker) {
@@ -69,6 +67,24 @@ public class ReportVisitor extends BaseTypeVisitor<BaseAnnotatedTypeFactory> {
         }
     }
 
+    @Override
+    protected BaseAnnotatedTypeFactory createTypeFactory() {
+        return new ReportAnnotatedTypeFactory(checker);
+    }
+
+    private static class ReportAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
+
+        public ReportAnnotatedTypeFactory(BaseTypeChecker checker) {
+            super(checker);
+            postInit();
+        }
+
+        @Override
+        protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
+            return getBundledTypeQualifiersWithoutPolyAll();
+        }
+    }
+
     @SuppressWarnings("CompilerMessages") // These warnings are not translated.
     @Override
     public Void scan(Tree tree, Void p) {
@@ -83,9 +99,8 @@ public class ReportVisitor extends BaseTypeVisitor<BaseAnnotatedTypeFactory> {
     }
 
     /**
-     * Check for uses of the {@link ReportUse} annotation.
-     * This method has to be called for every explicit or implicit use of a type,
-     * most cases are simply covered by the type validator.
+     * Check for uses of the {@link ReportUse} annotation. This method has to be called for every
+     * explicit or implicit use of a type, most cases are simply covered by the type validator.
      *
      * @param node the tree for error reporting only
      * @param member the element from which to start looking

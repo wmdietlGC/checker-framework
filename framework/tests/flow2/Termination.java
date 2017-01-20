@@ -1,8 +1,6 @@
-import java.util.*;
 import org.checkerframework.dataflow.qual.TerminatesExecution;
-import org.checkerframework.framework.qual.*;
 import org.checkerframework.framework.test.*;
-import tests.util.*;
+import testlib.util.*;
 
 // various tests for @TerminatesExecution
 class Termination {

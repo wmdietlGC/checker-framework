@@ -9,10 +9,10 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,42 +31,56 @@ import org.checkerframework.checker.lock.qual.LockingFree;
 import org.checkerframework.checker.lock.qual.MayReleaseLocks;
 import org.checkerframework.checker.lock.qual.ReleasesNoLocks;
 import org.checkerframework.common.basetype.BaseTypeChecker;
+import org.checkerframework.dataflow.analysis.FlowExpressions;
+import org.checkerframework.dataflow.analysis.FlowExpressions.ClassName;
+import org.checkerframework.dataflow.analysis.FlowExpressions.FieldAccess;
+import org.checkerframework.dataflow.analysis.FlowExpressions.LocalVariable;
+import org.checkerframework.dataflow.analysis.FlowExpressions.MethodCall;
+import org.checkerframework.dataflow.analysis.FlowExpressions.Receiver;
+import org.checkerframework.dataflow.analysis.FlowExpressions.ThisReference;
 import org.checkerframework.dataflow.qual.Pure;
 import org.checkerframework.dataflow.qual.SideEffectFree;
+import org.checkerframework.dataflow.util.PurityUtils;
 import org.checkerframework.framework.flow.CFAbstractAnalysis;
 import org.checkerframework.framework.flow.CFValue;
+import org.checkerframework.framework.source.Result;
 import org.checkerframework.framework.type.*;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
-import org.checkerframework.framework.type.treeannotator.ImplicitsTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
-import org.checkerframework.framework.type.treeannotator.PropagationTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
 import org.checkerframework.framework.util.AnnotatedTypes;
 import org.checkerframework.framework.util.AnnotationBuilder;
+import org.checkerframework.framework.util.FlowExpressionParseUtil;
+import org.checkerframework.framework.util.FlowExpressionParseUtil.FlowExpressionContext;
 import org.checkerframework.framework.util.MultiGraphQualifierHierarchy;
 import org.checkerframework.framework.util.MultiGraphQualifierHierarchy.MultiGraphFactory;
+import org.checkerframework.framework.util.expressionannotations.ExpressionAnnotationError;
+import org.checkerframework.framework.util.expressionannotations.ExpressionAnnotationHelper;
 import org.checkerframework.javacutil.AnnotationUtils;
 import org.checkerframework.javacutil.ElementUtils;
 import org.checkerframework.javacutil.InternalUtils;
 import org.checkerframework.javacutil.Pair;
 
 /**
- * LockAnnotatedTypeFactory builds types with LockHeld and LockPossiblyHeld annotations.
- * LockHeld identifies that an object is being used as a lock and is being held when a
- * given tree is executed. LockPossiblyHeld is the default type qualifier for this
- * hierarchy and applies to all fields, local variables and parameters - hence it does
- * not convey any information other than that it is not LockHeld.
+ * LockAnnotatedTypeFactory builds types with @LockHeld and @LockPossiblyHeld annotations. LockHeld
+ * identifies that an object is being used as a lock and is being held when a given tree is
+ * executed. LockPossiblyHeld is the default type qualifier for this hierarchy and applies to all
+ * fields, local variables and parameters -- hence it does not convey any information other than
+ * that it is not LockHeld.
  *
- * However, there are a number of other annotations used in conjunction with these annotations
- * to enforce proper locking.
+ * <p>However, there are a number of other annotations used in conjunction with these annotations to
+ * enforce proper locking.
+ *
  * @checker_framework.manual #lock-checker Lock Checker
  */
 public class LockAnnotatedTypeFactory
         extends GenericAnnotatedTypeFactory<CFValue, LockStore, LockTransfer, LockAnalysis> {
 
+    /** Expression annotation error message for when the expression is not effectively final. */
+    public static final String NOT_EFFECTIVELY_FINAL = "lock expression is not effectively final";
+
     /** Annotation constants */
-    protected final AnnotationMirror
-            LOCKHELD,
+    protected final AnnotationMirror LOCKHELD,
             LOCKPOSSIBLYHELD,
             SIDEEFFECTFREE,
             GUARDEDBYUNKNOWN,
@@ -99,16 +113,115 @@ public class LockAnnotatedTypeFactory
     }
 
     @Override
+    protected ExpressionAnnotationHelper createExpressionAnnotationHelper() {
+        return new ExpressionAnnotationHelper(this, GuardedBy.class) {
+            @Override
+            protected void reportErrors(Tree errorTree, List<ExpressionAnnotationError> errors) {
+                // If the error message is NOT_EFFECTIVELY_FINAL, then report lock.expression.not
+                // .final instead of an expression.unparsable.type.invalid error.
+                List<ExpressionAnnotationError> superErrors = new ArrayList<>();
+                for (ExpressionAnnotationError error : errors) {
+                    if (error.error.equals(NOT_EFFECTIVELY_FINAL)) {
+                        checker.report(
+                                Result.failure("lock.expression.not.final", error.expression),
+                                errorTree);
+                    } else {
+                        superErrors.add(error);
+                    }
+                }
+                super.reportErrors(errorTree, superErrors);
+            }
+
+            @Override
+            protected String standardizeString(
+                    String expression,
+                    FlowExpressionContext context,
+                    TreePath localScope,
+                    boolean useLocalScope) {
+                if (ExpressionAnnotationError.isExpressionError(expression)) {
+                    return expression;
+                }
+
+                // Adds logic to parse <self> expression, which only the Lock Checker uses.
+                if (LockVisitor.selfReceiverPattern.matcher(expression).matches()) {
+                    return expression;
+                }
+
+                try {
+                    FlowExpressions.Receiver result =
+                            FlowExpressionParseUtil.parse(
+                                    expression, context, localScope, useLocalScope);
+                    if (result == null) {
+                        return new ExpressionAnnotationError(expression, " ").toString();
+                    }
+                    if (!isExpressionEffectivelyFinal(result)) {
+                        // If the expression isn't effectively final, then return the
+                        // NOT_EFFECTIVELY_FINAL error string.
+                        return new ExpressionAnnotationError(expression, NOT_EFFECTIVELY_FINAL)
+                                .toString();
+                    }
+                    return result.toString();
+                } catch (FlowExpressionParseUtil.FlowExpressionParseException e) {
+                    return new ExpressionAnnotationError(expression, e).toString();
+                }
+            }
+        };
+    }
+
+    /**
+     * Returns whether or not the expression is effectively final.
+     *
+     * <p>This method returns true in the following cases when expr is:
+     *
+     * <p>1. a field access and the field is final and the field access expression is effectively
+     * final as specified by this method.
+     *
+     * <p>2. an effectively final local variable.
+     *
+     * <p>3. a deterministic method call whose arguments and receiver expression are effectively
+     * final as specified by this method.
+     *
+     * <p>4. a this reference or a class literal
+     *
+     * @param expr expression
+     * @return whether or not the expression is effectively final
+     */
+    boolean isExpressionEffectivelyFinal(Receiver expr) {
+        if (expr instanceof FieldAccess) {
+            FieldAccess fieldAccess = (FieldAccess) expr;
+            Receiver recv = fieldAccess.getReceiver();
+            // Don't call fieldAccess
+            return fieldAccess.isFinal() && isExpressionEffectivelyFinal(recv);
+        } else if (expr instanceof LocalVariable) {
+            return ElementUtils.isEffectivelyFinal(((LocalVariable) expr).getElement());
+        } else if (expr instanceof MethodCall) {
+            MethodCall methodCall = (MethodCall) expr;
+            for (Receiver param : methodCall.getParameters()) {
+                if (!isExpressionEffectivelyFinal(param)) {
+                    return false;
+                }
+            }
+            return PurityUtils.isDeterministic(this, methodCall.getElement())
+                    && isExpressionEffectivelyFinal(methodCall.getReceiver());
+        } else if (expr instanceof ThisReference || expr instanceof ClassName) {
+            // this is always final. "ClassName" is actually a class literal,(String.class), it's
+            // final too.
+            return true;
+        } else { // type of 'expr' is not supported in @GuardedBy(...) lock expressions
+            return false;
+        }
+    }
+
+    @Override
     protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
-        return Collections.unmodifiableSet(
-                new LinkedHashSet<Class<? extends Annotation>>(
-                        Arrays.asList(
-                                LockHeld.class,
-                                LockPossiblyHeld.class,
-                                GuardedBy.class,
-                                GuardedByUnknown.class,
-                                GuardSatisfied.class,
-                                GuardedByBottom.class)));
+        return new LinkedHashSet<Class<? extends Annotation>>(
+                Arrays.asList(
+                        LockHeld.class,
+                        LockPossiblyHeld.class,
+                        GuardedBy.class,
+                        GuardedByUnknown.class,
+                        GuardSatisfied.class,
+                        GuardedByBottom.class));
     }
 
     @Override
@@ -276,8 +389,8 @@ public class LockAnnotatedTypeFactory
         }
 
         /**
-         * Returns true if the receiver side effect annotation is weaker
-         * than side effect annotation 'other'.
+         * Returns true if the receiver side effect annotation is weaker than side effect annotation
+         * 'other'.
          */
         boolean isWeakerThan(SideEffectAnnotation other) {
             boolean weaker = false;
@@ -343,17 +456,18 @@ public class LockAnnotatedTypeFactory
     }
 
     /**
-     * Indicates which side effect annotation is present on the given method.
-     * If more than one annotation is present, this method issues an error (if issueErrorIfMoreThanOnePresent is true)
-     * and returns the annotation providing the weakest guarantee.
-     * Only call with issueErrorIfMoreThanOnePresent == true when visiting a method definition.
-     * This prevents multiple errors being issued for the same method (as would occur if
-     * issueErrorIfMoreThanOnePresent were set to true when visiting method invocations).
-     * If no annotation is present, return RELEASESNOLOCKS as the default, and MAYRELEASELOCKS
-     * as the default for unchecked code.
+     * Indicates which side effect annotation is present on the given method. If more than one
+     * annotation is present, this method issues an error (if issueErrorIfMoreThanOnePresent is
+     * true) and returns the annotation providing the weakest guarantee. Only call with
+     * issueErrorIfMoreThanOnePresent == true when visiting a method definition. This prevents
+     * multiple errors being issued for the same method (as would occur if
+     * issueErrorIfMoreThanOnePresent were set to true when visiting method invocations). If no
+     * annotation is present, return RELEASESNOLOCKS as the default, and MAYRELEASELOCKS as the
+     * default for unchecked code.
      *
      * @param element the method element
-     * @param issueErrorIfMoreThanOnePresent whether to issue an error if more than one side effect annotation is present on the method
+     * @param issueErrorIfMoreThanOnePresent whether to issue an error if more than one side effect
+     *     annotation is present on the method
      */
     // package-private
     SideEffectAnnotation methodSideEffectAnnotation(
@@ -395,8 +509,8 @@ public class LockAnnotatedTypeFactory
     }
 
     /**
-     * Returns the index on the GuardSatisfied annotation in the given AnnotatedTypeMirror.
-     * Assumes atm is non-null and contains a GuardSatisfied annotation.
+     * Returns the index on the GuardSatisfied annotation in the given AnnotatedTypeMirror. Assumes
+     * atm is non-null and contains a GuardSatisfied annotation.
      *
      * @param atm AnnotatedTypeMirror containing a GuardSatisfied annotation
      * @return the index on the GuardSatisfied annotation
@@ -407,8 +521,8 @@ public class LockAnnotatedTypeFactory
     }
 
     /**
-     * Returns the index on the given GuardSatisfied annotation.
-     * Assumes am is non-null and is a GuardSatisfied annotation.
+     * Returns the index on the given GuardSatisfied annotation. Assumes am is non-null and is a
+     * GuardSatisfied annotation.
      *
      * @param am AnnotationMirror for a GuardSatisfied annotation
      * @return the index on the GuardSatisfied annotation
@@ -488,18 +602,20 @@ public class LockAnnotatedTypeFactory
     }
 
     /**
-     * If {@code atm} is not null and contains a {@code @GuardSatisfied} annotation, and if the index of this
-     * {@code @GuardSatisfied} annotation matches {@code matchingGuardSatisfiedIndex}, then
-     * {@code methodReturnAtm} will have its annotation in the {@code @GuardedBy} hierarchy replaced
-     * with that in {@code atmWithAnnotationInGuardedByHierarchy}.
+     * If {@code atm} is not null and contains a {@code @GuardSatisfied} annotation, and if the
+     * index of this {@code @GuardSatisfied} annotation matches {@code matchingGuardSatisfiedIndex},
+     * then {@code methodReturnAtm} will have its annotation in the {@code @GuardedBy} hierarchy
+     * replaced with that in {@code atmWithAnnotationInGuardedByHierarchy}.
      *
-     * @param methodReturnAtm the AnnotatedTypeMirror for the return type of a method that will potentially have
-     * its annotation in the {@code @GuardedBy} hierarchy replaced.
-     * @param atm an AnnotatedTypeMirror that may contain a {@code @GuardSatisfied} annotation. May be null.
-     * @param matchingGuardSatisfiedIndex the {code @GuardSatisfied} index that the {@code @GuardSatisfied} annotation
-     * in {@code atm} must have in order for the replacement to occur.
-     * @param annotationInGuardedByHierarchy if the replacement occurs, the annotation in the {@code @GuardedBy}
-     *  hierarchy in this parameter will be used for the replacement.
+     * @param methodReturnAtm the AnnotatedTypeMirror for the return type of a method that will
+     *     potentially have its annotation in the {@code @GuardedBy} hierarchy replaced.
+     * @param atm an AnnotatedTypeMirror that may contain a {@code @GuardSatisfied} annotation. May
+     *     be null.
+     * @param matchingGuardSatisfiedIndex the {code @GuardSatisfied} index that the
+     *     {@code @GuardSatisfied} annotation in {@code atm} must have in order for the replacement
+     *     to occur.
+     * @param annotationInGuardedByHierarchy if the replacement occurs, the annotation in the
+     *     {@code @GuardedBy} hierarchy in this parameter will be used for the replacement.
      * @return true if the replacement occurred, false otherwise
      */
     private boolean replaceAnnotationInGuardedByHierarchyIfGuardSatisfiedIndexMatches(
@@ -520,10 +636,7 @@ public class LockAnnotatedTypeFactory
 
     @Override
     protected TreeAnnotator createTreeAnnotator() {
-        return new ListTreeAnnotator(
-                new LockTreeAnnotator(this),
-                new PropagationTreeAnnotator(this),
-                new ImplicitsTreeAnnotator(this));
+        return new ListTreeAnnotator(new LockTreeAnnotator(this), super.createTreeAnnotator());
     }
 
     @Override
@@ -543,13 +656,15 @@ public class LockAnnotatedTypeFactory
     }
 
     /**
-     * Given a field declaration with a {@code @net.jcip.annotations.GuardedBy} or
-     * {@code javax.annotation.concurrent.GuardedBy} annotation and an AnnotatedTypeMirror
-     * for that field, inserts the corresponding {@code @org.checkerframework.checker.lock.qual.GuardedBy}
-     * type qualifier into that AnnotatedTypeMirror.
+     * Given a field declaration with a {@code @net.jcip.annotations.GuardedBy} or {@code
+     * javax.annotation.concurrent.GuardedBy} annotation and an AnnotatedTypeMirror for that field,
+     * inserts the corresponding {@code @org.checkerframework.checker.lock.qual.GuardedBy} type
+     * qualifier into that AnnotatedTypeMirror.
      *
-     * @param element any Element (this method does nothing if the Element is not for a field declaration)
-     * @param atm the AnnotatedTypeMirror for element - the {@code @GuardedBy} type qualifier will be inserted here
+     * @param element any Element (this method does nothing if the Element is not for a field
+     *     declaration)
+     * @param atm the AnnotatedTypeMirror for element - the {@code @GuardedBy} type qualifier will
+     *     be inserted here
      */
     private void translateJcipAndJavaxAnnotations(Element element, AnnotatedTypeMirror atm) {
         if (!element.getKind().isField()) {

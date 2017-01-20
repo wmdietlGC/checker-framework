@@ -1,5 +1,6 @@
-import org.checkerframework.framework.qual.*;
-import tests.util.*;
+import org.checkerframework.framework.qual.DefaultQualifier;
+import org.checkerframework.framework.qual.TypeUseLocation;
+import testlib.util.*;
 
 class ExtendsDefault {
 

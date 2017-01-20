@@ -1,5 +1,6 @@
-import java.lang.annotation.*;
-import tests.util.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import testlib.util.*;
 
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface OddInt {

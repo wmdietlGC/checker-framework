@@ -1,7 +1,6 @@
 import org.checkerframework.checker.nullness.qual.*;
-import org.checkerframework.framework.qual.*;
-import tests.util.SubQual;
-import tests.util.SuperQual;
+import testlib.util.SubQual;
+import testlib.util.SuperQual;
 
 // @skip-test Dependent types are not currently supported (and may not make sense)
 //:: error: (initialization.fields.uninitialized)

@@ -12,8 +12,8 @@ import org.checkerframework.framework.test.diagnostics.TestDiagnosticUtils;
 import org.checkerframework.framework.util.PluginUtil;
 
 /**
- * Represents the test results from typechecking one or more java files using
- * the given TestConfiguration.
+ * Represents the test results from typechecking one or more java files using the given
+ * TestConfiguration.
  */
 public class TypecheckResult {
     private final TestConfiguration configuration;
@@ -82,7 +82,6 @@ public class TypecheckResult {
                         "The test run was not expected to issue errors/warnings, but it did.");
             }
 
-            List<Diagnostic<? extends JavaFileObject>> actualDiagnostics = getActualDiagnostics();
             if (!unexpectedDiagnostics.isEmpty() || !missingDiagnostics.isEmpty()) {
                 int numExpected = expectedDiagnostics.size();
                 int numFound = numExpected - missingDiagnostics.size();

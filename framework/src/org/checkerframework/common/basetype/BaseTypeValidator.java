@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import org.checkerframework.framework.qual.PolyAll;
 import org.checkerframework.framework.source.Result;
 import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
@@ -34,9 +35,7 @@ import org.checkerframework.javacutil.ErrorReporter;
 import org.checkerframework.javacutil.Pair;
 import org.checkerframework.javacutil.TreeUtils;
 
-/**
- * A visitor to validate the types in a tree.
- */
+/** A visitor to validate the types in a tree. */
 public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implements TypeValidator {
     protected boolean isValid = true;
 
@@ -54,17 +53,15 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
         this.atypeFactory = atypeFactory;
     }
 
-    /** The entry point to the type validator.
-     * Validate the type against the given tree.
-     * Neither this method nor visit should be called directly by a visitor,
-     * only use {@link BaseTypeVisitor#validateTypeOf(Tree)}.
+    /**
+     * The entry point to the type validator. Validate the type against the given tree. Neither this
+     * method nor visit should be called directly by a visitor, only use {@link
+     * BaseTypeVisitor#validateTypeOf(Tree)}.
      *
      * @param type the type to validate
-     * @param tree the tree from which the type originated.
-     *   Note that the tree might be a method tree - the
-     *     return type should then be validated.
-     *   Note that the tree might be a variable tree - the
-     *     field type should then be validated.
+     * @param tree the tree from which the type originated. Note that the tree might be a method
+     *     tree -- the return type should then be validated. Note that the tree might be a variable
+     *     tree -- the field type should then be validated.
      * @return true, iff the type is valid
      */
     @Override
@@ -83,12 +80,12 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
     }
 
     /**
-     * Most errors reported by this class are of the form type.invalid.  This method reports
-     * when the bounds of a wildcard or type variable don't make sense.  Bounds make sense
-     * when the effective annotations on the upper bound are supertypes of those on the lower
-     * bounds for all hierarchies.  To ensure that this subtlety is not lost on users,
-     * we report "bound.type.incompatible" and print the bounds along with the invalid type
-     * rather than a "type.invalid".
+     * Most errors reported by this class are of the form type.invalid. This method reports when the
+     * bounds of a wildcard or type variable don't make sense. Bounds make sense when the effective
+     * annotations on the upper bound are supertypes of those on the lower bounds for all
+     * hierarchies. To ensure that this subtlety is not lost on users, we report
+     * "bound.type.incompatible" and print the bounds along with the invalid type rather than a
+     * "type.invalid".
      */
     protected void reportInvalidBounds(final AnnotatedTypeMirror type, final Tree tree) {
         final String label;
@@ -317,13 +314,12 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
     }
 
     /**
-     * Checks that the annotations on the type arguments supplied to a type or a
-     * method invocation are within the bounds of the type variables as
-     * declared, and issues the "type.argument.type.incompatible" error if they are
-     * not.
+     * Checks that the annotations on the type arguments supplied to a type or a method invocation
+     * are within the bounds of the type variables as declared, and issues the
+     * "type.argument.type.incompatible" error if they are not.
      *
-     * This method used to be visitParameterizedType, which incorrectly handles
-     * the main annotation on generic types.
+     * <p>This method used to be visitParameterizedType, which incorrectly handles the main
+     * annotation on generic types.
      */
     protected Void visitParameterizedType(AnnotatedDeclaredType type, ParameterizedTypeTree tree) {
         // System.out.printf("TypeValidator.visitParameterizedType: type: %s, tree: %s\n",
@@ -385,7 +381,7 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
                 for (AnnotationMirror aOnVar : onVar) {
                     if (upper.isAnnotatedInHierarchy(aOnVar) &&
                             !checker.getQualifierHierarchy().isSubtype(aOnVar,
-                                    upper.getAnnotationInHierarchy(aOnVar))) {
+                                    upper.findAnnotationInHierarchy(aOnVar))) {
                         this.reportError(type, tree);
                     }
                 }
@@ -431,7 +427,7 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
                 for (AnnotationMirror aOnVar : onVar) {
                     if (upper.isAnnotatedInHierarchy(aOnVar) &&
                             !atypeFactory.getQualifierHierarchy().isSubtype(aOnVar,
-                                    upper.getAnnotationInHierarchy(aOnVar))) {
+                                    upper.findAnnotationInHierarchy(aOnVar))) {
                         this.reportError(type, tree);
                     }
                 }
@@ -484,8 +480,9 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
     }
 
     /**
-     * Determines if there are multiple qualifiers from a single hierarchy in type's
-     * primary annotations.  If so, report an error.
+     * Determines if there are multiple qualifiers from a single hierarchy in type's primary
+     * annotations. If so, report an error.
+     *
      * @param type the type to check
      * @param tree tree on which an error is reported
      * @return true if an error was reported
@@ -494,6 +491,9 @@ public class BaseTypeValidator extends AnnotatedTypeScanner<Void, Tree> implemen
         boolean error = false;
         Set<AnnotationMirror> seenTops = AnnotationUtils.createAnnotationSet();
         for (AnnotationMirror aOnVar : type.getAnnotations()) {
+            if (AnnotationUtils.areSameByClass(aOnVar, PolyAll.class)) {
+                continue;
+            }
             AnnotationMirror top = atypeFactory.getQualifierHierarchy().getTopAnnotation(aOnVar);
             if (seenTops.contains(top)) {
                 this.reportError(type, tree);
