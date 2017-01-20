@@ -15,8 +15,8 @@ import org.checkerframework.javacutil.AnnotationUtils;
 import org.checkerframework.javacutil.ErrorReporter;
 
 /**
- * A "general" annotated type factory that supports qualifiers from any type hierarchy.
- * One big limitation is that it does not support annotations coming from a stub file.
+ * A "general" annotated type factory that supports qualifiers from any type hierarchy. One big
+ * limitation is that it does not support annotations coming from a stub file.
  */
 public class GeneralAnnotatedTypeFactory extends AnnotatedTypeFactory {
 
@@ -35,9 +35,7 @@ public class GeneralAnnotatedTypeFactory extends AnnotatedTypeFactory {
         // See testcase tests/nullness/GeneralATFStore.java
     }
 
-    /** Return true to support any qualifier.
-     * No handling of aliases.
-     */
+    /** Return true to support any qualifier. No handling of aliases. */
     @Override
     public boolean isSupportedQualifier(AnnotationMirror a) {
         return true;
@@ -49,8 +47,9 @@ public class GeneralAnnotatedTypeFactory extends AnnotatedTypeFactory {
     }
 }
 
-/** A very limited QualifierHierarchy that is used for access to
- * qualifiers from different type systems.
+/**
+ * A very limited QualifierHierarchy that is used for access to qualifiers from different type
+ * systems.
  */
 class GeneralQualifierHierarchy extends MultiGraphQualifierHierarchy {
 
@@ -78,8 +77,8 @@ class GeneralQualifierHierarchy extends MultiGraphQualifierHierarchy {
 
     // Never find a corresponding qualifier.
     @Override
-    public AnnotationMirror findCorrespondingAnnotation(
-            AnnotationMirror aliased, Collection<? extends AnnotationMirror> annotations) {
+    public AnnotationMirror findAnnotationInSameHierarchy(
+            Collection<? extends AnnotationMirror> annotations, AnnotationMirror annotationMirror) {
         return null;
     }
 

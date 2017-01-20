@@ -13,6 +13,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import org.checkerframework.common.basetype.BaseTypeChecker;
@@ -31,21 +32,22 @@ import org.checkerframework.framework.util.AtmCombo;
 import org.checkerframework.framework.util.PluginUtil;
 import org.checkerframework.framework.util.TypeArgumentMapper;
 import org.checkerframework.javacutil.ErrorReporter;
+import org.checkerframework.javacutil.InternalUtils;
 import org.checkerframework.javacutil.Pair;
 import org.checkerframework.javacutil.TypesUtils;
 
 /**
  * Default implementation of TypeHierarchy that implements the JLS specification with minor
- * deviations as outlined by the Checker Framework manual.  Changes to the JLS include
- * forbidding covariant array types, raw types, and allowing covariant type arguments
- * depending on various options passed to DefaultTypeHierarchy.
+ * deviations as outlined by the Checker Framework manual. Changes to the JLS include forbidding
+ * covariant array types, raw types, and allowing covariant type arguments depending on various
+ * options passed to DefaultTypeHierarchy.
  *
- * Subtyping rules of the JLS can be found in section 4.10, "Subtyping":
+ * <p>Subtyping rules of the JLS can be found in section 4.10, "Subtyping":
  * http://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.10
  *
- * Note: The visit methods of this class must be public but it is intended to be used through
- * a TypeHierarchy interface reference which will only allow isSubtype to be called.  It does
- * not make sense to call the visit methods on their own.
+ * <p>Note: The visit methods of this class must be public but it is intended to be used through a
+ * TypeHierarchy interface reference which will only allow isSubtype to be called. It does not make
+ * sense to call the visit methods on their own.
  */
 public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, VisitHistory>
         implements TypeHierarchy {
@@ -148,6 +150,7 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Returns true if subtype {@literal <:} supertype
+     *
      * @param subtype expected subtype
      * @param supertype expected supertype
      * @return true if subtype is actually a subtype of supertype
@@ -166,6 +169,7 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Returns true if subtype {@literal <:} supertype
+     *
      * @param subtype expected subtype
      * @param supertype expected supertype
      * @param top the hierarchy for which we want to make a comparison
@@ -182,8 +186,9 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Calls is subtype pair-wise on the elements of the subtypes/supertypes Iterable.
-     * @return true if for each pair, the subtype element is a subtype of the supertype element.  An
-     *         exception will be thrown if the iterables are of different sizes
+     *
+     * @return true if for each pair, the subtype element is a subtype of the supertype element. An
+     *     exception will be thrown if the iterables are of different sizes.
      */
     public boolean areSubtypes(
             final Iterable<? extends AnnotatedTypeMirror> subtypes,
@@ -214,9 +219,7 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
         return true;
     }
 
-    /**
-     * @return error message for the case when two types shouldn't be compared
-     */
+    /** @return error message for the case when two types shouldn't be compared */
     @Override
     protected String defaultErrorMessage(
             final AnnotatedTypeMirror subtype,
@@ -232,8 +235,9 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * Returns true if subtype {@literal <:} supertype. The only difference between this and isSubtype(subtype, supertype) is
-     * that this method passes a pre-existing visited
+     * Returns true if subtype {@literal <:} supertype. The only difference between this and
+     * isSubtype(subtype, supertype) is that this method passes a pre-existing visited
+     *
      * @param subtype expected subtype
      * @param supertype expected supertype
      * @return true if subtype is actually a subtype of supertype
@@ -246,8 +250,11 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * Compare the primary annotations of subtype and supertype.   Neither type can be missing annotations.
-     * @return true if the primary annotation on subtype {@literal <:} primary annotation on supertype for the current top.
+     * Compare the primary annotations of subtype and supertype. Neither type can be missing
+     * annotations.
+     *
+     * @return true if the primary annotation on subtype {@literal <:} primary annotation on
+     *     supertype for the current top.
      */
     protected boolean isPrimarySubtype(AnnotatedTypeMirror subtype, AnnotatedTypeMirror supertype) {
         return isPrimarySubtype(subtype, supertype, false);
@@ -255,9 +262,11 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Compare the primary annotations of subtype and supertype.
+     *
      * @param annosCanBeEmtpy indicates that annotations may be missing from the typemirror
-     * @return true if the primary annotation on subtype {@literal <:} primary annotation on supertype for the current top or
-     * both annotations are null.  False is returned if one annotation is null and the other is not.
+     * @return true if the primary annotation on subtype {@literal <:} primary annotation on
+     *     supertype for the current top or both annotations are null. False is returned if one
+     *     annotation is null and the other is not.
      */
     protected boolean isPrimarySubtype(
             AnnotatedTypeMirror subtype, AnnotatedTypeMirror supertype, boolean annosCanBeEmtpy) {
@@ -269,11 +278,12 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Compare the primary annotations of subtype and supertype.
+     *
      * @param subtypeAnno annotation we expect to be a subtype
      * @param supertypeAnno annotation we expect to be a supertype of subtype
      * @param annosCanBeEmtpy indicates that annotations may be missing from the typemirror
-     * @return true if subtype {@literal <:} supertype or both annotations are null.
-     *         False is returned if one annotation is null and the other is not.
+     * @return true if subtype {@literal <:} supertype or both annotations are null. False is
+     *     returned if one annotation is null and the other is not.
      */
     protected boolean isAnnoSubtype(
             AnnotationMirror subtypeAnno, AnnotationMirror supertypeAnno, boolean annosCanBeEmtpy) {
@@ -285,8 +295,9 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * Checks to see if subtype is bottom (if a bottom exists)
-     * If there is no explicit bottom then false is returned
+     * Checks to see if subtype is bottom (if a bottom exists) If there is no explicit bottom then
+     * false is returned
+     *
      * @param subtype type to isValid against bottom
      * @return true if subtype's primary annotation is bottom
      */
@@ -314,8 +325,9 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * Check and subtype first determines if the subtype/supertype combination has already been visited.
-     * If so, it returns true, otherwise add the subtype/supertype combination and then make a subtype check
+     * Check and subtype first determines if the subtype/supertype combination has already been
+     * visited. If so, it returns true, otherwise add the subtype/supertype combination and then
+     * make a subtype check
      */
     protected boolean checkAndSubtype(
             final AnnotatedTypeMirror subtype,
@@ -367,17 +379,18 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * A declared type is considered a supertype of another declared type only if all of the
-     * type arguments of the declared type "contain" the corresponding type arguments of the subtype.
+     * A declared type is considered a supertype of another declared type only if all of the type
+     * arguments of the declared type "contain" the corresponding type arguments of the subtype.
      * Containment is described in the JLS section 4.5.1 "Type Arguments of Parameterized Types",
      * http://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.5.1
      *
      * @param inside the "subtype" type argument
      * @param outside the "supertype" type argument
-     * @param visited a history of type pairs that have been visited, used to halt on recursive bounds
+     * @param visited a history of type pairs that have been visited, used to halt on recursive
+     *     bounds
      * @param canBeCovariant whether or not type arguments are allowed to be covariant
      * @return true if inside is contained by outside OR, if canBeCovariant == true, inside is a
-     *         subtype of outside
+     *     subtype of outside
      */
     protected boolean isContainedBy(
             final AnnotatedTypeMirror inside,
@@ -400,7 +413,8 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
             }
 
             boolean aboveSuperBound = checkAndSubtype(outsideWc.getSuperBound(), inside, visited);
-            boolean belowExtendsBound = checkAndSubtype(inside, outsideWcUB, visited);
+            AnnotatedTypeMirror castedInside = castedAsSuper(inside, outsideWcUB);
+            boolean belowExtendsBound = checkAndSubtype(castedInside, outsideWcUB, visited);
             return belowExtendsBound && aboveSuperBound;
 
         } else { //TODO: IF WE NEED TO COMPARE A WILDCARD TO A CAPTURE OF A WILDCARD WE FAIL IN ARE_EQUAL -> DO CAPTURE CONVERSION
@@ -480,7 +494,7 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * A helper class for visitDeclared_Declared.  There are subtypes of DefaultTypeHierarchy that
+     * A helper class for visitDeclared_Declared. There are subtypes of DefaultTypeHierarchy that
      * need to customize the handling of type arguments. This method provides a convenient extension
      * point.
      */
@@ -522,8 +536,9 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
 
     /**
      * Compare typeArgs is called on a single pair of type args that should share a relationship
-     * subTypeArg {@literal <:} superTypeArg (subtypeArg is contained by superTypeArg).  However, if either
-     * type is raw then either (subTypeArg {@literal <:} superTypeArg) or the rawnessComparer.isValid(superTypeArg, subTypeArg, visited)
+     * subTypeArg {@literal <:} superTypeArg (subtypeArg is contained by superTypeArg). However, if
+     * either type is raw then either (subTypeArg {@literal <:} superTypeArg) or the
+     * rawnessComparer.isValid(superTypeArg, subTypeArg, visited)
      */
     protected boolean compareTypeArgs(
             AnnotatedTypeMirror subTypeArg,
@@ -920,14 +935,80 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     @Override
     public Boolean visitWildcard_Wildcard(
             AnnotatedWildcardType subtype, AnnotatedWildcardType supertype, VisitHistory visited) {
-        // This method is called at a method invocation where a type variable in the method
-        // declaration is substituted with a wildcard.
-        // For example:
-        // <T> void method(Gen<T> t) {}
-        // Gen<?> x;
-        // method(x); // this method is called when checking this method call
+        return visitWildcardSubtype(subtype, supertype, visited);
+    }
 
-        if (subtype.getUnderlyingType() == supertype.getUnderlyingType()) {
+    //------------------------------------------------------------------------
+    // These "visit" methods are utility methods that aren't part of the visit
+    // interface but that handle cases that more than one visit method shares
+    // in commmon
+
+    /** An intersection is a supertype if all of its bounds are a supertype of subtype */
+    protected boolean visitIntersectionSupertype(
+            AnnotatedTypeMirror subtype,
+            AnnotatedIntersectionType supertype,
+            VisitHistory visited) {
+        if (visited.contains(subtype, supertype)) {
+            return true;
+        }
+        visited.add(subtype, supertype);
+        return isSubtypeOfAll(subtype, supertype.directSuperTypes(), visited);
+    }
+
+    /** A type variable is a supertype if its lower bound is above subtype. */
+    protected boolean visitTypevarSupertype(
+            AnnotatedTypeMirror subtype, AnnotatedTypeVariable supertype, VisitHistory visited) {
+        return checkAndSubtype(subtype, supertype.getLowerBound(), visited);
+    }
+
+    /**
+     * A type variable is a subtype if its upper bounds is below the supertype. Note: When comparing
+     * two type variables this method and visitTypevarSupertype will combine to isValid the subtypes
+     * upper bound against the supertypes lower bound.
+     */
+    protected boolean visitTypevarSubtype(
+            AnnotatedTypeVariable subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
+        AnnotatedTypeMirror upperBound = subtype.getUpperBound();
+        if (TypesUtils.isBoxedPrimitive(upperBound.getUnderlyingType())
+                && supertype instanceof AnnotatedPrimitiveType) {
+            upperBound = supertype.atypeFactory.getUnboxedType((AnnotatedDeclaredType) upperBound);
+        }
+        return checkAndSubtype(upperBound, supertype, visited);
+    }
+
+    /** A union type is a subtype if ALL of its alternatives are subtypes of supertype */
+    protected Boolean visitUnionSubtype(
+            AnnotatedUnionType subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
+        return areAllSubtypes(subtype.getAlternatives(), supertype, visited);
+    }
+
+    protected boolean visitWildcardSupertype(
+            AnnotatedTypeMirror subtype, AnnotatedWildcardType supertype, VisitHistory visited) {
+        if (supertype.isUninferredTypeArgument()) { //TODO: REMOVE WHEN WE FIX TYPE ARG INFERENCE
+            return isSubtype(subtype, supertype.getExtendsBound());
+        }
+        return isSubtype(subtype, supertype.getSuperBound(), visited);
+    }
+
+    protected boolean visitWildcardSubtype(
+            AnnotatedWildcardType subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
+        TypeMirror superTypeMirror = supertype.getUnderlyingType();
+        if (supertype.getKind() == TypeKind.TYPEVAR) {
+            TypeVariable atv = (TypeVariable) supertype.getUnderlyingType();
+            if (InternalUtils.isCaptured(atv)) {
+                superTypeMirror = InternalUtils.getCapturedWildcard(atv);
+            }
+        }
+
+        if (subtype.getUnderlyingType() == superTypeMirror) {
+            // This can happen at a method invocation where a type variable in the method
+            // declaration is substituted with a wildcard.
+            // For example:
+            // <T> void method(Gen<T> t) {}
+            // Gen<?> x;
+            // method(x); // this method is called when checking this method call
+            // And also when checking lambdas
+
             boolean subtypeHasAnno = subtype.getAnnotationInHierarchy(currentTop) != null;
             boolean supertypeHasAnno = supertype.getAnnotationInHierarchy(currentTop) != null;
 
@@ -944,77 +1025,16 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
                 return true;
             }
         }
-        return visitWildcardSubtype(subtype, supertype, visited);
-    }
 
-    //------------------------------------------------------------------------
-    // These "visit" methods are utility methods that aren't part of the visit
-    // interface but that handle cases that more than one visit method shares
-    // in commmon
-
-    /**
-     * An intersection is a supertype if all of its bounds are a supertype of subtype
-     */
-    protected boolean visitIntersectionSupertype(
-            AnnotatedTypeMirror subtype,
-            AnnotatedIntersectionType supertype,
-            VisitHistory visited) {
-        if (visited.contains(subtype, supertype)) {
-            return true;
-        }
-        visited.add(subtype, supertype);
-        return isSubtypeOfAll(subtype, supertype.directSuperTypes(), visited);
-    }
-
-    /**
-     * A type variable is a supertype if its lower bound is above subtype.
-     */
-    protected boolean visitTypevarSupertype(
-            AnnotatedTypeMirror subtype, AnnotatedTypeVariable supertype, VisitHistory visited) {
-        return checkAndSubtype(subtype, supertype.getLowerBound(), visited);
-    }
-
-    /**
-     * A type variable is a subtype if its upper bounds is below the supertype.  Note: When comparing two type variables
-     * this method and visitTypevarSupertype will combine to isValid the subtypes upper bound against the supertypes
-     * lower bound.
-     */
-    protected boolean visitTypevarSubtype(
-            AnnotatedTypeVariable subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
-        AnnotatedTypeMirror upperBound = subtype.getUpperBound();
-        if (TypesUtils.isBoxedPrimitive(upperBound.getUnderlyingType())
-                && supertype instanceof AnnotatedPrimitiveType) {
-            upperBound = supertype.atypeFactory.getUnboxedType((AnnotatedDeclaredType) upperBound);
-        }
-        return checkAndSubtype(upperBound, supertype, visited);
-    }
-
-    /**
-     * A union type is a subtype if ALL of its alternatives are subtypes of supertype
-     */
-    protected Boolean visitUnionSubtype(
-            AnnotatedUnionType subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
-        return areAllSubtypes(subtype.getAlternatives(), supertype, visited);
-    }
-
-    protected boolean visitWildcardSupertype(
-            AnnotatedTypeMirror subtype, AnnotatedWildcardType supertype, VisitHistory visited) {
-        if (supertype.isTypeArgHack()) { //TODO: REMOVE WHEN WE FIX TYPE ARG INFERENCE
-            return isSubtype(subtype, supertype.getExtendsBound());
-        }
-        return isSubtype(subtype, supertype.getSuperBound(), visited);
-    }
-
-    protected boolean visitWildcardSubtype(
-            AnnotatedWildcardType subtype, AnnotatedTypeMirror supertype, VisitHistory visited) {
         return isSubtype(subtype.getExtendsBound(), supertype, visited);
     }
 
     /**
      * Calls asSuper and casts the result to the same type as the input supertype
+     *
      * @param subtype subtype to be transformed to supertype
      * @param supertype supertype that subtype is transformed to
-     * @param <T> The type of supertype and return type
+     * @param <T> the type of supertype and return type
      * @return subtype as an instance of supertype
      */
     @SuppressWarnings("unchecked")
@@ -1055,16 +1075,14 @@ public class DefaultTypeHierarchy extends AbstractAtmComboVisitor<Boolean, Visit
     }
 
     /**
-     * Some times we create type arguments for types that were raw.  When we do an asSuper we lose these
-     * arguments.  If in the converted type (i.e. the subtype as super) is missing type arguments AND
-     * those type arguments should come from the original subtype's type arguments then we copy the
-     * original type arguments to the converted type.
-     * e.g.
-     * We have a type W, that "wasRaw" {@code ArrayList<? extends Object>}
-     * When W is converted to type A, List, using asSuper it no longer has its type argument.
-     * But since the type argument to List should be the same as that to ArrayList we copy over
-     * the type argument of W to A.
-     * A becomes {@code List<? extends Object>}
+     * Some times we create type arguments for types that were raw. When we do an asSuper we lose
+     * these arguments. If in the converted type (i.e. the subtype as super) is missing type
+     * arguments AND those type arguments should come from the original subtype's type arguments
+     * then we copy the original type arguments to the converted type. e.g. We have a type W, that
+     * "wasRaw" {@code ArrayList<? extends Object>} When W is converted to type A, List, using
+     * asSuper it no longer has its type argument. But since the type argument to List should be the
+     * same as that to ArrayList we copy over the type argument of W to A. A becomes {@code List<?
+     * extends Object>}
      *
      * @param originalSubtype the subtype before being converted by asSuper
      * @param asSuperType he subtype after being converted by asSuper

@@ -37,10 +37,11 @@ CF_JAVAC="java -Xmx512m -jar ${CF_JAR} -Xbootclasspath/p:${BOOTDIR}"
 CP="${BINDIR}:${BOOTDIR}:${LT_BIN}:${TOOLSJAR}:${CF_BIN}:${CF_JAR}"
 JFLAGS="-XDignore.symbol.file=true -Xmaxerrs 20000 -Xmaxwarns 20000\
  -source 8 -target 8 -encoding ascii -cp ${CP}"
-# fenum is inherently an extensible type system, so it seems wrong to have
+# Fenum is inherently an extensible type system, so it seems wrong to have
 # conservative annotations for it.  Don't process those annotations.
+# Remove i18n due to https://github.com/typetools/checker-framework/issues/857
 # PROCESSORS="fenum,formatter,guieffect,i18n,i18nformatter,interning,linear,lock,nullness,signature,signedness,units"
-PROCESSORS="formatter,guieffect,i18n,i18nformatter,interning,linear,lock,nullness,signature,signedness,units"
+PROCESSORS="formatter,guieffect,i18nformatter,interning,linear,lock,nullness,signature,signedness,units"
 PFLAGS="-Anocheckjdk -Aignorejdkastub -AuseDefaultsForUncheckedCode=bytecode,source -AprintErrorStack -Awarns"
 JAIFDIR="${WORKDIR}/jaifs"
 SYMDIR="${WORKDIR}/sym"

@@ -20,12 +20,10 @@ import org.checkerframework.checker.i18nformatter.qual.I18nFormatBottom;
 import org.checkerframework.checker.i18nformatter.qual.I18nFormatFor;
 import org.checkerframework.checker.i18nformatter.qual.I18nInvalidFormat;
 import org.checkerframework.checker.i18nformatter.qual.I18nUnknownFormat;
+import org.checkerframework.common.basetype.BaseAnnotatedTypeFactory;
 import org.checkerframework.common.basetype.BaseTypeChecker;
-import org.checkerframework.framework.flow.CFStore;
-import org.checkerframework.framework.flow.CFValue;
 import org.checkerframework.framework.type.AnnotatedTypeFactory;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
-import org.checkerframework.framework.type.GenericAnnotatedTypeFactory;
 import org.checkerframework.framework.type.QualifierHierarchy;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.TreeAnnotator;
@@ -34,22 +32,18 @@ import org.checkerframework.framework.util.MultiGraphQualifierHierarchy.MultiGra
 import org.checkerframework.javacutil.AnnotationUtils;
 
 /**
- * Adds {@link I18nFormat} to the type of tree, if it is a {@code String} or
- * {@code char} literal that represents a satisfiable format. The annotation's
- * value is set to be a list of appropriate {@link I18nConversionCategory}
- * values for every parameter of the format.
+ * Adds {@link I18nFormat} to the type of tree, if it is a {@code String} or {@code char} literal
+ * that represents a satisfiable format. The annotation's value is set to be a list of appropriate
+ * {@link I18nConversionCategory} values for every parameter of the format.
  *
- * It also creates a map from the provided translation file if exists. This map
- * will be used to get the corresponding value of a key when
- * {@link java.util.ResourceBundle#getString} method is invoked.
+ * <p>It also creates a map from the provided translation file if exists. This map will be used to
+ * get the corresponding value of a key when {@link java.util.ResourceBundle#getString} method is
+ * invoked.
  *
- * @checker_framework.manual #i18n-formatter-checker Internationalization
- *                           Format String Checker
+ * @checker_framework.manual #i18n-formatter-checker Internationalization Format String Checker
  * @author Siwakorn Srisakaokul
  */
-public class I18nFormatterAnnotatedTypeFactory
-        extends GenericAnnotatedTypeFactory<
-                CFValue, CFStore, I18nFormatterTransfer, I18nFormatterAnalysis> {
+public class I18nFormatterAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 
     protected final AnnotationMirror I18NUNKNOWNFORMAT;
     protected final AnnotationMirror I18NFORMAT;

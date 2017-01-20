@@ -1,5 +1,4 @@
-import java.util.*;
-import tests.util.*;
+import testlib.util.*;
 
 public abstract class MethodOverrideBadParam {
 

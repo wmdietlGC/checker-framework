@@ -11,19 +11,18 @@ import com.sun.source.tree.Tree;
 import java.util.Collection;
 import java.util.Collections;
 import javax.lang.model.element.Element;
+import javax.lang.model.type.TypeMirror;
 import org.checkerframework.dataflow.util.HashCodeUtils;
 import org.checkerframework.javacutil.InternalUtils;
 import org.checkerframework.javacutil.TreeUtils;
 
 /**
- * A node representing a class name used in an expression
- * such as a static method invocation.
+ * A node representing a class name used in an expression such as a static method invocation.
  *
- * parent.<em>class</em> .forName(...)
+ * <p>parent.<em>class</em> .forName(...)
  *
  * @author Stefan Heule
  * @author Charlie Garrett
- *
  */
 public class ClassNameNode extends Node {
 
@@ -58,6 +57,13 @@ public class ClassNameNode extends Node {
         this.tree = tree;
         this.element = TreeUtils.elementFromUse(tree);
         this.parent = parent;
+    }
+
+    public ClassNameNode(TypeMirror type, Element element) {
+        super(type);
+        this.tree = null;
+        this.element = element;
+        this.parent = null;
     }
 
     public Element getElement() {

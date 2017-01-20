@@ -3,7 +3,7 @@ import org.checkerframework.checker.lock.qual.EnsuresLockHeldIf;
 import org.checkerframework.checker.lock.qual.GuardedBy;
 import org.checkerframework.checker.lock.qual.Holding;
 
-class ReentrantLock {
+class MyReentrantLock {
     final Object myfield = new Object();
 
     @Holding("myfield")
@@ -32,8 +32,8 @@ class ReentrantLock {
     }
 }
 
-class Foo {
-    final ReentrantLock myLock = new ReentrantLock();
+class ThisPostCondition {
+    final MyReentrantLock myLock = new MyReentrantLock();
 
     @GuardedBy("myLock") Bar bar = new Bar();
 
@@ -49,7 +49,7 @@ class Foo {
     }
 
     void doNotLock() {
-        //:: error: (contracts.precondition.not.satisfied.field)
+        //:: error: (lock.not.held)
         bar.field.toString();
     }
 
@@ -57,7 +57,7 @@ class Foo {
         if (myLock.tryLock()) {
             bar.field.toString();
         } else {
-            //:: error: (contracts.precondition.not.satisfied.field)
+            //:: error: (lock.not.held)
             bar.field.toString();
         }
     }

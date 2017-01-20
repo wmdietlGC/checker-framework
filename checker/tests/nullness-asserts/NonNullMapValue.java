@@ -1,7 +1,15 @@
-import java.io.*;
-import java.util.*;
-import org.checkerframework.checker.nullness.qual.*;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import org.checkerframework.checker.nullness.qual.EnsuresNonNullIf;
+import org.checkerframework.checker.nullness.qual.KeyFor;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class NonNullMapValue {
 
@@ -78,6 +86,8 @@ public class NonNullMapValue {
 
     public static <T> void testAssertFlow(Map<T, List<T>> preds, T node) {
         assert preds.containsKey(node);
+        // TODO, see Issue 961
+        //:: error: (iterating.over.nullable)
         for (T pred : preds.get(node)) {}
     }
 
@@ -86,6 +96,8 @@ public class NonNullMapValue {
         // Both of the next two lines should type-check.  The second one won't
         // unless the checker knows that pred is a key in the map.
         List<T> dom_of_pred1 = dom.get(pred);
+        // TODO, see Issue 961
+        //:: error: (assignment.type.incompatible)
         @NonNull List<T> dom_of_pred2 = dom.get(pred);
     }
 
@@ -96,6 +108,8 @@ public class NonNullMapValue {
         // Both of the next two lines should type-check.  The second one won't
         // unless the checker knows that pred is a key in the map.
         List<T> dom_of_pred1 = dom.get(pred);
+        // TODO, see Issue 961
+        //:: error: (assignment.type.incompatible)
         @NonNull List<T> dom_of_pred2 = dom.get(pred);
     }
 
@@ -210,6 +224,9 @@ public class NonNullMapValue {
     interface MyMap3<K, V> {
         @org.checkerframework.dataflow.qual.Pure
         @EnsuresNonNullIf(result = true, expression = "get(#1)")
+        // The following error is issued because, unlike in interface MyMap2,
+        // this interface has no get() method.
+        //:: error: (flowexpr.parse.error)
         boolean containsKey(@Nullable Object a1);
     }
 }

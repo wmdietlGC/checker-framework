@@ -1,20 +1,20 @@
 package tests;
 
 import java.io.File;
-import org.checkerframework.framework.test.CheckerFrameworkTest;
+import java.util.List;
+import org.checkerframework.framework.test.CheckerFrameworkPerDirectoryTest;
 import org.junit.runners.Parameterized.Parameters;
 
 /**
  * Tests the MethodVal Checker.
  *
  * @author smillst
- *
  */
-public class MethodValTest extends CheckerFrameworkTest {
+public class MethodValTest extends CheckerFrameworkPerDirectoryTest {
 
-    public MethodValTest(File testFile) {
+    public MethodValTest(List<File> testFiles) {
         super(
-                testFile,
+                testFiles,
                 org.checkerframework.common.reflection.MethodValChecker.class,
                 "methodval",
                 "-Anomsgtext");

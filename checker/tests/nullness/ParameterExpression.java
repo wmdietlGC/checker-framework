@@ -4,6 +4,7 @@ import org.checkerframework.checker.nullness.qual.*;
 public class ParameterExpression {
     public void m1(
             @Nullable Object o, @Nullable Object o1, @Nullable Object o2, @Nullable Object o3) {
+        //:: error: (flowexpr.parse.error)
         m2(o);
         //:: error: (dereference.of.nullable)
         o.toString();
@@ -97,6 +98,6 @@ public class ParameterExpression {
     }
 
     // Annotations on formal parameters referring to a formal parameter of the same method.
-    //:: warning: (method.declaration.expression.parameter.name)
+    //:: error: (expression.unparsable.type.invalid)
     public void m14(@KeyFor("param2") Object param1, Map<Object, Object> param2) {}
 }

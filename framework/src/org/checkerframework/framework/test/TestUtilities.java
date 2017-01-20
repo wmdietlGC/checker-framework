@@ -57,6 +57,54 @@ public class TestUtilities {
         return getJavaFilesAsArgumentList(dirs);
     }
 
+    /**
+     * Returns a list where each item is a list of Java files, excluding any skip tests, for each
+     * directory given by dirName and also a list for any subdirectory.
+     *
+     * @param parent parent directory of the dirNames directories
+     * @param dirNames names of directories to search
+     * @return list where each item is a list of Java test files grouped by directory
+     */
+    public static List<List<File>> findJavaFilesPerDirectory(File parent, String... dirNames) {
+        List<List<File>> filesPerDirectory = new ArrayList<>();
+
+        for (String dirName : dirNames) {
+            File dir = new File(parent, dirName);
+            if (dir.isDirectory()) {
+                filesPerDirectory.addAll(findJavaTestFilesInDirectory(dir));
+            }
+        }
+
+        return filesPerDirectory;
+    }
+
+    /**
+     * Returns a list where each item is a list of Java files, excluding any skip tests, for each
+     * subdirectory of {@code dir} and also a list of Java files in dir.
+     *
+     * @param dir directory in which to search for Java files
+     * @return a list of list of Java test files
+     */
+    private static List<List<File>> findJavaTestFilesInDirectory(File dir) {
+        assert dir.isDirectory();
+        List<List<File>> fileGroupedByDirectory = new ArrayList<>();
+        List<File> fileInDir = new ArrayList<>();
+
+        fileGroupedByDirectory.add(fileInDir);
+        for (String fileName : dir.list()) {
+            File file = new File(dir, fileName);
+            if (file.isDirectory()) {
+                fileGroupedByDirectory.addAll(findJavaTestFilesInDirectory(file));
+            } else if (isJavaTestFile(file)) {
+                fileInDir.add(file);
+            }
+        }
+        if (fileInDir.isEmpty()) {
+            fileGroupedByDirectory.remove(fileInDir);
+        }
+        return fileGroupedByDirectory;
+    }
+
     public static List<Object[]> findFilesInParent(File parent, String... fileNames) {
         List<Object[]> files = new ArrayList<Object[]>();
         for (String fileName : fileNames) {
@@ -65,9 +113,7 @@ public class TestUtilities {
         return files;
     }
 
-    /**
-     * Traverses the directories listed looking for java test files
-     */
+    /** Traverses the directories listed looking for java test files */
     public static List<File> getJavaFilesAsArgumentList(File... dirs) {
         List<File> arguments = new ArrayList<File>();
         for (File dir : dirs) {
@@ -80,9 +126,7 @@ public class TestUtilities {
         return arguments;
     }
 
-    /**
-     * Returns all the java files that are descendants of the given directory
-     */
+    /** Returns all the java files that are descendants of the given directory */
     public static List<File> deeplyEnclosedJavaTestFiles(File directory) {
         if (!directory.exists()) {
             throw new IllegalArgumentException(
@@ -205,7 +249,7 @@ public class TestUtilities {
             if (first) {
                 first = false;
             } else {
-                listStrBuilder.append(" ,");
+                listStrBuilder.append(", ");
             }
             listStrBuilder.append(file.getAbsolutePath());
         }
@@ -356,12 +400,11 @@ public class TestUtilities {
     }
 
     /**
-     * TODO: REDO COMMENT
-     * Compares the result of the compiler against an array of Strings.
+     * TODO: REDO COMMENT Compares the result of the compiler against an array of Strings.
      *
-     * In a checker, we treat a more specific error message as subsumed by a general one.
-     * For example, "new.array.type.invalid" is subsumed by "type.invalid".
-     * This is not the case in the test framework; the exact error key is expected.
+     * <p>In a checker, we treat a more specific error message as subsumed by a general one. For
+     * example, "new.array.type.invalid" is subsumed by "type.invalid". This is not the case in the
+     * test framework; the exact error key is expected.
      */
     public static void assertResultsAreValid(TypecheckResult testResult) {
         if (testResult.didTestFail()) {

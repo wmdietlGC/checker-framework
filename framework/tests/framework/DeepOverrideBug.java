@@ -1,5 +1,4 @@
-import java.util.*;
-import tests.util.*;
+import testlib.util.*;
 
 // TODO: the output have a "missing return statement"?
 public class DeepOverrideBug {
@@ -10,13 +9,13 @@ public class DeepOverrideBug {
         String abstractMethod();
     }
 
-    public static abstract class A {
+    public abstract static class A {
         public abstract @Odd String abstractMethod();
 
         public abstract String interfaceMethod();
     }
 
-    public static abstract class B extends A implements I {}
+    public abstract static class B extends A implements I {}
 
     public static class C extends B {
         //:: error: (override.return.invalid)

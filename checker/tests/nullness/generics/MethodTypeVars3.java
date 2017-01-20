@@ -1,8 +1,13 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.checkerframework.checker.nullness.qual.*;
 
 class MethodTypeVars3 {
-    public static <@KeyFor("preds") T extends @KeyFor("preds") Object> Map<T, List<T>> dominators(
+    public static <@KeyFor("#1") T extends @KeyFor("#1") Object> Map<T, List<T>> dominators(
             Map<T, List<T>> preds) {
         List<T> nodes = new ArrayList<T>(preds.keySet());
 

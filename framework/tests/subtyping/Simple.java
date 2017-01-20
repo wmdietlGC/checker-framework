@@ -1,5 +1,6 @@
-import java.util.*;
-import tests.util.Encrypted;
+import java.util.LinkedList;
+import java.util.List;
+import testlib.util.Encrypted;
 
 abstract class BasicFunctionality {
 

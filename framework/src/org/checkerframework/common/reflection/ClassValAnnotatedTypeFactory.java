@@ -10,7 +10,6 @@ import com.sun.tools.javac.code.Type.UnionClassType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,13 +54,12 @@ public class ClassValAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 
     @Override
     protected Set<Class<? extends Annotation>> createSupportedTypeQualifiers() {
-        return Collections.unmodifiableSet(
-                new HashSet<Class<? extends Annotation>>(
-                        Arrays.asList(
-                                UnknownClass.class,
-                                ClassVal.class,
-                                ClassBound.class,
-                                ClassValBottom.class)));
+        return new HashSet<Class<? extends Annotation>>(
+                Arrays.asList(
+                        UnknownClass.class,
+                        ClassVal.class,
+                        ClassBound.class,
+                        ClassValBottom.class));
     }
 
     private AnnotationMirror createClassVal(List<String> values) {
@@ -98,9 +96,7 @@ public class ClassValAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
         return new ClassValQualifierHierarchy(factory);
     }
 
-    /**
-     * The qualifier hierarchy for the ClassVal type system
-     */
+    /** The qualifier hierarchy for the ClassVal type system */
     protected class ClassValQualifierHierarchy extends MultiGraphQualifierHierarchy {
 
         public ClassValQualifierHierarchy(MultiGraphFactory f) {
@@ -205,9 +201,12 @@ public class ClassValAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
 
     /**
      * Implements these type inference rules:
+     *
+     * <pre>
      * C.class:             @ClassVal(fully qualified name of C)
      * Class.forName(name): @ClassVal("name")
      * exp.getClass():      @ClassBound(fully qualified classname of exp)
+     * </pre>
      */
     protected class ClassValTreeAnnotator extends TreeAnnotator {
 
@@ -276,8 +275,8 @@ public class ClassValAnnotatedTypeFactory extends BaseAnnotatedTypeFactory {
         }
 
         /**
-         * Return String representation of class name. This will not return the
-         * correct name for anonymous classes.
+         * Return String representation of class name. This will not return the correct name for
+         * anonymous classes.
          */
         private String getClassNameFromType(Type classType) {
             switch (classType.getKind()) {

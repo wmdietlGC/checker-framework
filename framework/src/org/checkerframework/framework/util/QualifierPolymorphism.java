@@ -3,7 +3,6 @@ package org.checkerframework.framework.util;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
-import com.sun.tools.javac.code.Type.AnnotatedType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,18 +40,13 @@ import org.checkerframework.javacutil.TreeUtils;
 import org.checkerframework.javacutil.TypesUtils;
 
 /**
- * Implements framework support for type qualifier polymorphism. Checkers that
- * wish to use it should add calls to
- * {@link #annotate(MethodInvocationTree, AnnotatedTypeMirror.AnnotatedExecutableType)} to the
- * {@link AnnotatedTypeFactory#addComputedTypeAnnotations(Tree, AnnotatedTypeMirror)} and
- * {@link AnnotatedTypeFactory#addComputedTypeAnnotations(Tree, AnnotatedTypeMirror)}
- * methods.
+ * Implements framework support for type qualifier polymorphism. Checkers that wish to use it should
+ * add calls to {@link #annotate(MethodInvocationTree, AnnotatedTypeMirror.AnnotatedExecutableType)}
+ * to the {@link AnnotatedTypeFactory#addComputedTypeAnnotations(Tree, AnnotatedTypeMirror)} and
+ * {@link AnnotatedTypeFactory#addComputedTypeAnnotations(Tree, AnnotatedTypeMirror)} methods.
  *
- * <p>
- *
- * This implementation currently only supports polymorphism for method
- * invocations, for which the return type depends on the unification of the
- * parameter/receiver types.
+ * <p>This implementation currently only supports polymorphism for method invocations, for which the
+ * return type depends on the unification of the parameter/receiver types.
  *
  * @see PolymorphicQualifier
  */
@@ -64,10 +58,10 @@ public class QualifierPolymorphism {
 
     private final Completer completer;
 
-    /** The polymorphic qualifiers: mapping from the top of a qualifier
-     * hierarchy to the polymorphic qualifier of that hierarchy.
-     * Field always non-null but might be an empty mapping.
-     * The "null" key, if present, always maps to PolyAll.
+    /**
+     * The polymorphic qualifiers: mapping from the top of a qualifier hierarchy to the polymorphic
+     * qualifier of that hierarchy. Field always non-null but might be an empty mapping. The "null"
+     * key, if present, always maps to PolyAll.
      */
     protected final Map<AnnotationMirror, AnnotationMirror> polyQuals;
 
@@ -80,9 +74,8 @@ public class QualifierPolymorphism {
     private final AnnotationMirror POLYALL;
 
     /**
-     * Creates a {@link QualifierPolymorphism} instance that uses the given
-     * checker for querying type qualifiers and the given factory for getting
-     * annotated types.
+     * Creates a {@link QualifierPolymorphism} instance that uses the given checker for querying
+     * type qualifiers and the given factory for getting annotated types.
      *
      * @param env the processing environment
      * @param factory the factory for the current checker
@@ -164,9 +157,9 @@ public class QualifierPolymorphism {
     }
 
     /**
-     * Returns null if the qualifier is not polymorphic.
-     * Returns the (given) top of the type hierarchy, in which it is polymorphic, otherwise.
-     * The top qualifier is given by the programmer, so must be normalized to ensure its the real top.
+     * Returns null if the qualifier is not polymorphic. Returns the (given) top of the type
+     * hierarchy, in which it is polymorphic, otherwise. The top qualifier is given by the
+     * programmer, so must be normalized to ensure its the real top.
      */
     public static Class<? extends Annotation> getPolymorphicQualifierTop(
             Elements elements, AnnotationMirror qual) {
@@ -264,6 +257,11 @@ public class QualifierPolymorphism {
             newRequiredArgs.addAll(requiredArgs);
             requiredArgs = newRequiredArgs;
         }
+        // Deal with varargs
+        if (memberReference.isVarArgs() && !functionalInterface.isVarArgs()) {
+            requiredArgs = AnnotatedTypes.expandVarArgsFromTypes(memberReference, args);
+        }
+
         Map<AnnotationMirror, Set<? extends AnnotationMirror>> matchingMapping =
                 collector.visit(args, requiredArgs);
 
@@ -299,8 +297,8 @@ public class QualifierPolymorphism {
                     };
 
     /**
-     * Completes a type by removing any unresolved polymorphic qualifiers,
-     * replacing them with the top qualifiers.
+     * Completes a type by removing any unresolved polymorphic qualifiers, replacing them with the
+     * top qualifiers.
      */
     class Completer extends AnnotatedTypeScanner<Void, Void> {
         @Override
@@ -330,11 +328,10 @@ public class QualifierPolymorphism {
     private final PolyCollector collector;
 
     /**
-     * A Helper class that tries to resolve the polymorhpic qualifiers with
-     * the most restricted qualifier.
-     * The mapping is from the polymorhpic qualifier to the substitution for that qualifier,
-     * which is a set of qualifiers. For most polymorphic qualifiers this will be a singleton set.
-     * For the @PolyAll qualifier, this might be a set of qualifiers.
+     * A Helper class that tries to resolve the polymorhpic qualifiers with the most restricted
+     * qualifier. The mapping is from the polymorhpic qualifier to the substitution for that
+     * qualifier, which is a set of qualifiers. For most polymorphic qualifiers this will be a
+     * singleton set. For the @PolyAll qualifier, this might be a set of qualifiers.
      */
     private class PolyCollector
             extends SimpleAnnotatedTypeVisitor<
@@ -624,6 +621,11 @@ public class QualifierPolymorphism {
         @Override
         public Map<AnnotationMirror, Set<? extends AnnotationMirror>> visitWildcard(
                 AnnotatedWildcardType type, AnnotatedTypeMirror actualType) {
+            if (type.isUninferredTypeArgument()
+                    || !TypesUtils.isErasedSubtype(
+                            types, type.getUnderlyingType(), actualType.getUnderlyingType())) {
+                return Collections.emptyMap();
+            }
             AnnotatedTypeMirror typeSuper = AnnotatedTypes.asSuper(atypeFactory, type, actualType);
             if (typeSuper.getKind() != TypeKind.WILDCARD) {
                 return visit(typeSuper, actualType);

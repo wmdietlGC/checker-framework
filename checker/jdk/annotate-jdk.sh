@@ -12,7 +12,7 @@
 # 1.  Clone and build the checker framework from source.
 #     git clone https://github.com/typetools/checker-framework
 #     cd checker-framework
-#     git checkout create-annotated-jdk
+#     git checkout create-annotated-jdk-2
 #     ant
 #
 # 2.  Clone the OpenJDK 8u repository and sub-repositories.
@@ -33,15 +33,18 @@
 #
 # 4.  Compile the annotated JDK 8 source; this takes about 9 hours.
 #      cd $t/libraries/annotated-jdk8u-jdk/src/share/classes
-#      sh -v $cf/checker/jdk/build8.sh
+#      $cf/checker/jdk/build8.sh
 #     [The command to run will eventually be: .../checker-framework/checker/jdk/build-jdk-jar.sh but that is untested.  build7.sh isn't tested either.]
 #     (It may be necessary to edit some of the variable settings in the
 #     script.)  If successful, this will replace checker/dist/jdk8.jar
 #     with a .jar file containing annotations from the annotated JDK source.
-#   
+#
 # 5.  Run the Checker Framework test suite
-#     1. check out and build annotated-jdk branch;
-#     2. run "ant tests-nobuildjdk" from Checker Framework's base directory.
+#     1. Copy the newly-created jdk8.jar to the web:
+#      \cp -pf $ch/dist/jdk8.jar /cse/www2/types/checker-framework/annotated-jdk-jars/
+#      chgrp types_www /cse/www2/types/checker-framework/annotated-jdk-jars/*
+#     2. check out the annotated-jdk-2 branch;
+#     3. run "ant dist tests-nobuildjdk" from Checker Framework's base directory.
 
 
 # Build stages for this script:
