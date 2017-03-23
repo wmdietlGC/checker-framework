@@ -405,6 +405,7 @@
                 <include name="org/checkerframework/**/qual/*.java"/>
                 <include name="**/FormatUtil.java"/>
                 <include name="**/NullnessUtil.java"/>
+                <include name="**/NullnessUtils.java"/>
                 <include name="**/RegexUtil.java"/>
                 <include name="**/UnitsTools.java"/>
                 <include name="**/SignednessUtil.java"/>
