@@ -1050,7 +1050,7 @@ public abstract class SourceChecker extends AbstractTypeProcessor
      * @throws IllegalArgumentException if {@code source} is neither a {@link Tree} nor an {@link
      *     Element}
      */
-    public void message(
+    private void message(
             Diagnostic.Kind kind,
             Object source,
             /*@CompilerMessageKey*/ String msgKey,
@@ -1160,9 +1160,9 @@ public abstract class SourceChecker extends AbstractTypeProcessor
     }
 
     /**
-     * Do not call this method directly. Call {@link #message(Kind, Object, String, Object...)}
-     * instead. (This method exists so that the BaseTypeChecker can override it and treat messages
-     * from compound checkers differently.)
+     * Do not call this method directly. Call {@link #report(Result, Object)} instead. (This method
+     * exists so that the BaseTypeChecker can override it and treat messages from compound checkers
+     * differently.)
      */
     protected void printMessage(
             Diagnostic.Kind kind, String message, Tree source, CompilationUnitTree root) {
@@ -1183,19 +1183,20 @@ public abstract class SourceChecker extends AbstractTypeProcessor
     /**
      * Print a non-localized message using the javac messager. This is preferable to using
      * System.out or System.err, but should only be used for exceptional cases that don't happen in
-     * correct usage. Localized messages should be raised using {@link
-     * SourceChecker#message(Diagnostic.Kind, Object, String, Object...)}.
+     * correct usage. Localized messages should be raised using {@link SourceChecker#report(Result,
+     * Object)}.
      *
      * @param kind the kind of message to print
      * @param msg the message text
      * @param args optional arguments to substitute in the message
-     * @see SourceChecker#message(Diagnostic.Kind, Object, String, Object...)
+     * @see SourceChecker#report(Result, Object)
      */
     public void message(Diagnostic.Kind kind, String msg, Object... args) {
+        String ftdmsg = String.format(msg, args);
         if (messager != null) {
-            messager.printMessage(kind, String.format(msg, args));
+            messager.printMessage(kind, ftdmsg);
         } else {
-            System.err.println(kind + ": " + String.format(msg, args));
+            System.err.println(kind + ": " + ftdmsg);
         }
     }
 
