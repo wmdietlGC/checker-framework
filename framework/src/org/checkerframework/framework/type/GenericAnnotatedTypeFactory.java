@@ -80,6 +80,7 @@ import org.checkerframework.framework.qual.TypeUseLocation;
 import org.checkerframework.framework.qual.Unqualified;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedDeclaredType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
+import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedWildcardType;
 import org.checkerframework.framework.type.treeannotator.ImplicitsTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.ListTreeAnnotator;
 import org.checkerframework.framework.type.treeannotator.PropagationTreeAnnotator;
@@ -1255,6 +1256,11 @@ public abstract class GenericAnnotatedTypeFactory<
         return returnType;
     }
 
+    @Override
+    public void addDefaultAnnotations(AnnotatedTypeMirror type) {
+        defaults.annotate((Element) null, type);
+    }
+
     /**
      * This method is final; override {@link #addComputedTypeAnnotations(Tree, AnnotatedTypeMirror,
      * boolean)} instead.
@@ -1370,6 +1376,24 @@ public abstract class GenericAnnotatedTypeFactory<
         Pair<AnnotatedExecutableType, List<AnnotatedTypeMirror>> mfuPair =
                 super.methodFromUse(tree);
         AnnotatedExecutableType method = mfuPair.first;
+
+        if (method.getReturnType().getKind() == TypeKind.WILDCARD
+                && ((AnnotatedWildcardType) method.getReturnType()).isUninferredTypeArgument()) {
+            // Get the correct Java type from the tree and use it as the upper bound of the
+            // wildcard.
+            TypeMirror tm = InternalUtils.typeOf(tree);
+            AnnotatedTypeMirror t = toAnnotatedType(tm, false);
+
+            AnnotatedWildcardType wildcard = (AnnotatedWildcardType) method.getReturnType();
+            if (ignoreUninferredTypeArguments) {
+                t.replaceAnnotations(defaults.getDefaultQualifiersForCheckedCode());
+            } else {
+                t.replaceAnnotations(wildcard.getExtendsBound().getAnnotations());
+            }
+            wildcard.setExtendsBound(t);
+            addDefaultAnnotations(wildcard);
+        }
+
         if (dependentTypesHelper != null) {
             dependentTypesHelper.viewpointAdaptMethod(tree, method);
         }
